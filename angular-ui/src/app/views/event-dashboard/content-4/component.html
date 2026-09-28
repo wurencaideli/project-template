@@ -1,0 +1,32 @@
+<div class="content-4-cp">
+    <div class="head">
+        <head-cp [title]="title()" />
+    </div>
+    <div class="filter">
+        <button type="button" class="refresh-btn" [title]="refreshLabel()" (click)="refreshAll()">
+            <svg-icon name="rotate-ccw" svgSrcPath="assets/icon-images/" />
+        </button>
+    </div>
+    <div class="chart">
+        @for (item of dataList(); track item.id; let i = $index) {
+            <div class="item">
+                <chart-head-cp [title]="item.title" />
+                <div class="chart">
+                    <define-chart-cp
+                        [isAuto]="true"
+                        [isAutoResize]="false"
+                        [options]="item.options"
+                        [showLoading]="!!item.apiStatus.loading"
+                        (onChartInit)="onChartInit(item, $event)"
+                    />
+                    @if (item.apiStatus.error) {
+                        <div class="error">
+                            <span>{{ item.apiStatus.error }}</span>
+                            <div class="retry-btn" (click)="retryFetch(i)">{{ retryLabel() }}</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

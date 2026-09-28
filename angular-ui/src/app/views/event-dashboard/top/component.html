@@ -1,0 +1,21 @@
+<div class="top-cp">
+    @for (item of cardList(); track item.id) {
+        <div class="item">
+            <div class="left"></div>
+            <div class="content">
+                <div class="title">{{ item.title }}</div>
+                <div class="number" (click)="onTitleClick(item)">
+                    {{ item.number }}@if (item.unit) {<span class="unit">{{ item.unit }}</span>}
+                </div>
+                <div class="text" (click)="onTitleClickSecondary(item)">{{ item.text }}</div>
+            </div>
+            <div class="chart"></div>
+        </div>
+    }
+    @if (apiStatus().error) {
+        <div class="error">
+            <span>{{ apiStatus().error }}</span>
+            <div class="retry-btn" (click)="retryFetch()">{{ retryLabel }}</div>
+        </div>
+    }
+</div>

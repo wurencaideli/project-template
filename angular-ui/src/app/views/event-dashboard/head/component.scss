@@ -1,0 +1,30 @@
+:host {
+    display: block;
+}
+.head-cp {
+    position: relative;
+    width: fit-content;
+    padding: 0 0 0 var(--dashboard-size_40);
+    box-sizing: border-box;
+    min-width: var(--dashboard-size_224);
+    height: var(--dashboard-size_31);
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: var(--dashboard-size_14);
+    color: #d6f3ff;
+    font-weight: bold;
+    > .bg {
+        z-index: -1;
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        background-size: 100% 100%;
+        width: var(--dashboard-size_224);
+        background-repeat: no-repeat;
+        background-position: center;
+        background-image: url(../../../../assets/dashboard-img/card-head-bg.png);
+    }
+}

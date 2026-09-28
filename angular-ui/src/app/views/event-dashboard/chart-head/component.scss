@@ -1,0 +1,19 @@
+:host {
+    display: block;
+}
+.chart-head-cp {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: var(--dashboard-size_14);
+    color: #ffffffad;
+    font-weight: bold;
+    gap: var(--dashboard-size_15);
+    > .line {
+        height: var(--dashboard-size_25);
+        width: var(--dashboard-size_5);
+        border-radius: 999px;
+        background: #029af2;
+    }
+}

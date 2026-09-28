@@ -1,0 +1,43 @@
+<div class="content-1-cp">
+    <div class="head">
+        <head-cp [title]="title()" />
+    </div>
+    <div class="filter">
+        <input
+            type="date"
+            class="date-input"
+            [value]="(form().startMoment | date: 'yyyy-MM-dd') ?? ''"
+            [min]="(form().startMinDate | date: 'yyyy-MM-dd') ?? ''"
+            [max]="(form().startMaxDate | date: 'yyyy-MM-dd') ?? ''"
+            [placeholder]="form().startPlaceholder"
+            (change)="onStartChange({ date: parseDateInput($any($event.target).value) })"
+        />
+        <input
+            type="date"
+            class="date-input"
+            [value]="(form().endMoment | date: 'yyyy-MM-dd') ?? ''"
+            [min]="(form().endMinDate | date: 'yyyy-MM-dd') ?? ''"
+            [max]="(form().endMaxDate | date: 'yyyy-MM-dd') ?? ''"
+            [placeholder]="form().endPlaceholder"
+            (change)="onEndChange({ date: parseDateInput($any($event.target).value) })"
+        />
+        <button type="button" class="refresh-btn" [title]="refreshLabel()" (click)="retryFetch()">
+            <svg-icon name="rotate-ccw" svgSrcPath="assets/icon-images/" />
+        </button>
+    </div>
+    <div class="chart">
+        <define-chart-cp
+            [isAuto]="true"
+            [isAutoResize]="false"
+            [options]="options()"
+            [showLoading]="!!apiStatus().loading"
+            (onChartInit)="onChartInit($event)"
+        />
+        @if (apiStatus().error) {
+            <div class="error">
+                <span>{{ apiStatus().error }}</span>
+                <div class="retry-btn" (click)="retryFetch()">{{ retryLabel() }}</div>
+            </div>
+        }
+    </div>
+</div>

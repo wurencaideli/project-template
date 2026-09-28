@@ -1,0 +1,126 @@
+:host {
+    display: block;
+}
+.top-cp {
+    position: relative;
+    width: 100%;
+    pointer-events: initial;
+    padding: 0 var(--dashboard-size_18);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: var(--dashboard-size_18);
+    height: var(--dashboard-size_150);
+    > .item {
+        position: relative;
+        background-image: linear-gradient(180deg, #36276c 0%, #052851 100%);
+        border-radius: var(--dashboard-size_5);
+        width: 0;
+        flex: 1 1 0;
+        display: flex;
+        height: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--dashboard-size_18);
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        padding: var(--dashboard-size_18);
+        box-sizing: border-box;
+        color: white;
+        &:nth-child(1) {
+            > .left {
+                background-image: url(../../../../assets/dashboard-img/icon-1.png);
+            }
+        }
+        &:nth-child(2) {
+            > .left {
+                background-image: url(../../../../assets/dashboard-img/icon-2.png);
+            }
+        }
+        &:nth-child(3) {
+            > .left {
+                background-image: url(../../../../assets/dashboard-img/icon-3.png);
+            }
+        }
+        &:nth-child(4) {
+            > .left {
+                background-image: url(../../../../assets/dashboard-img/icon-4.png);
+            }
+        }
+        > .left {
+            pointer-events: none;
+            position: relative;
+            z-index: 4;
+            width: var(--dashboard-size_88);
+            height: var(--dashboard-size_88);
+            min-width: var(--dashboard-size_88);
+            min-height: var(--dashboard-size_88);
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+        > .content {
+            pointer-events: none;
+            position: relative;
+            z-index: 4;
+            > * {
+                pointer-events: initial;
+                width: fit-content;
+            }
+            > .title {
+                font-size: var(--dashboard-size_14);
+                color: #ffffff;
+                font-weight: bold;
+            }
+            > .number {
+                font-weight: bold;
+                font-size: var(--dashboard-size_30);
+                color: #ffffff;
+                margin: var(--dashboard-size_5) 0;
+                cursor: pointer;
+                > .unit {
+                    font-size: var(--dashboard-size_14);
+                    font-weight: normal;
+                    margin-left: var(--dashboard-size_4);
+                    cursor: pointer;
+                }
+            }
+            > .text {
+                font-weight: bold;
+                font-size: var(--dashboard-size_14);
+                color: #07bb75;
+                cursor: pointer;
+            }
+        }
+        > .chart {
+            position: absolute;
+            right: var(--dashboard-size_18);
+            height: var(--dashboard-size_80);
+            width: 40%;
+            z-index: 3;
+        }
+    }
+    > .error {
+        z-index: 5;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: var(--dashboard-size_14);
+        color: #ffffff;
+        background: rgba(7, 14, 38, 0.3);
+        > .retry-btn {
+            color: #029af2;
+            cursor: pointer;
+            margin-left: var(--dashboard-size_8);
+        }
+    }
+}

@@ -1,0 +1,60 @@
+<div class="showcase">
+    <section class="showcase__section">
+        <h2 class="showcase__heading">Usage</h2>
+        <pre class="showcase__code"><code>&lt;svg-icon name="search" svgSrcPath="assets/icon-images/"&gt;&lt;/svg-icon&gt;</code></pre>
+    </section>
+
+    <section class="showcase__section">
+        <h2 class="showcase__heading">Icons</h2>
+        <p class="showcase__summary">
+            @if (keyword()) {
+                <span>{{ filtered().length }} / {{ icons.length }} {{ summary() }}</span>
+            } @else {
+                <span>{{ summary() }}</span>
+            }
+        </p>
+
+        <div class="showcase__toolbar">
+            <input
+                class="showcase__search"
+                type="text"
+                placeholder="按名称搜索…"
+                [ngModel]="keyword()"
+                (ngModelChange)="onKeywordChange($event)"
+            />
+            <div class="showcase__pagination">
+                <button
+                    type="button"
+                    class="showcase__page-btn"
+                    [disabled]="pageIndex() <= 1"
+                    (click)="prevPage()"
+                >
+                    上一页
+                </button>
+                <span class="showcase__page-info">
+                    第 {{ pageIndex() }} / {{ totalPages() }} 页
+                </span>
+                <button
+                    type="button"
+                    class="showcase__page-btn"
+                    [disabled]="pageIndex() >= totalPages()"
+                    (click)="nextPage()"
+                >
+                    下一页
+                </button>
+            </div>
+        </div>
+
+        <div class="showcase__grid">
+            @for (icon of paged(); track icon.name) {
+                <div class="showcase__card">
+                    <svg-icon class="showcase__icon" [name]="icon.name" [svgSrcPath]="icon.srcPath" />
+                    <span class="showcase__label">{{ icon.name }}</span>
+                </div>
+            }
+            @if (paged().length === 0) {
+                <div class="showcase__empty">没有匹配的图标</div>
+            }
+        </div>
+    </section>
+</div>
