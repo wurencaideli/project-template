@@ -1,0 +1,1 @@
+import{init as initUserServer}from"./user.js";import{init as initTokenServer}from"./token.js";import{init as initFriendlyLinkServer}from"./friendly-link.js";export async function initEntity(){await initUserServer(),await initTokenServer(),await initFriendlyLinkServer()}export async function scheduledTasks(){}

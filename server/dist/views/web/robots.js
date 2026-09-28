@@ -1,0 +1,1 @@
+export function createRouter(t){const{DUMOGU_Domain:e}=process.env;t.get("/robots.txt",async function(t,n){n.type("text/plain").send(["User-agent: *","Disallow: /web-admin","Disallow: /api/file/",`Sitemap: https://${e}/sitemap.xml`,""].join("\n"))})}
