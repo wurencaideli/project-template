@@ -24,12 +24,16 @@ function createServeSpaIndex(distDirPath: string) {
             const htmlPath = path.join(distDirPath, 'index.html');
             const stream = fs.createReadStream(htmlPath);
             stream.on('error', () => {
-                reply.code(404).type('text/html').send(getGlobalVariables('html404Str'));
+                if (!reply.sent) {
+                    reply.code(404).type('text/html').send(getGlobalVariables('html404Str'));
+                }
             });
             reply.type('text/html');
             await pipeline(stream, reply.raw);
-        } catch (err) {
-            reply.code(404).type('text/html').send(getGlobalVariables('html404Str'));
+        } catch {
+            if (!reply.sent) {
+                reply.code(404).type('text/html').send(getGlobalVariables('html404Str'));
+            }
         }
     };
 }
@@ -44,6 +48,9 @@ export async function createRouter(fastify: FastifyInstance) {
     const serveAngularUiIndex = createServeSpaIndex(angularUiDistDirPath);
     await fastify.register(
         async (instance) => {
+            instance.get('/', async (_request, reply) => {
+                return reply.code(404).send(new PublicReturn(404, '接口 404 未注册', ''));
+            });
             await createPublicRouter(instance);
             await createUserRouter(instance);
             await createSystemRouter(instance);

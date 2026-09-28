@@ -55,7 +55,7 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.get(
-        '/friendly-link/info/:uId',
+        '/friendly-link/:uId',
         {
             preHandler: vToken,
         },
@@ -70,7 +70,7 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.post(
-        '/friendly-link/add',
+        '/friendly-link',
         {
             preHandler: vAdmin,
         },
@@ -99,23 +99,29 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.put(
-        '/friendly-link/update',
+        '/friendly-link/:uId',
         {
             preHandler: vAdmin,
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
-            const mustKeys: any = ['uId', 'link', 'icon', 'content', 'hidden'];
-            const params: any = justPick(request.body || {}, mustKeys);
+            const params: any = justPick(request.body || {}, [
+                'link',
+                'icon',
+                'content',
+                'hidden',
+            ] as any);
             const verifiedData = friendlyLinkUpdateValidatorFn(params);
             if (verifiedData) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const target = await friendlyLinkServer.findByUId(params.uId);
+            const uId = (request.params as any)?.uId;
+            const target = await friendlyLinkServer.findByUId(uId);
             if (!target) {
                 reply.code(404).send(new PublicReturn(404, '修改失败: 未找到相应数据'));
                 return;
             }
+            params.uId = uId;
             params.updateDate = new Date().getTime();
             await friendlyLinkServer.update(target, params);
             reply.send(new PublicReturn(200, '成功', params));

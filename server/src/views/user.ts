@@ -15,7 +15,7 @@ import { sequelize } from '../entity/index.js';
 
 export function createRouter(fastify: FastifyInstance) {
     fastify.post(
-        '/user/register',
+        '/user',
         {
             preHandler: [apiMiddleware.vCaptcha, getReqLimiter(1, 1000 * 3)],
         },

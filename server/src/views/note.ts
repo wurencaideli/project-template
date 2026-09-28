@@ -63,7 +63,7 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.get(
-        '/note/info/:uId',
+        '/note/:uId',
         {
             preHandler: vToken,
         },
@@ -83,7 +83,7 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.post(
-        '/note/add',
+        '/note',
         {
             preHandler: vToken,
         },
@@ -116,19 +116,24 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.put(
-        '/note/update',
+        '/note/:uId',
         {
             preHandler: vToken,
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
-            const mustKeys: any = ['uId', 'title', 'content', 'hidden', 'pinned'];
-            const params: any = justPick(request.body || {}, mustKeys);
+            const params: any = justPick(request.body || {}, [
+                'title',
+                'content',
+                'hidden',
+                'pinned',
+            ] as any);
             const verifiedData = noteUpdateValidatorFn(params);
             if (verifiedData) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const target: any = await noteServer.findByUId(params.uId);
+            const uId = (request.params as any)?.uId;
+            const target: any = await noteServer.findByUId(uId);
             if (!target) {
                 reply.code(404).send(new PublicReturn(404, '修改失败: 未找到相应数据'));
                 return;
@@ -138,6 +143,7 @@ export function createRouter(fastify: FastifyInstance) {
                 reply.code(403).send(new PublicReturn(403, '无权修改此日记'));
                 return;
             }
+            params.uId = uId;
             params.updateDate = new Date().getTime();
             await noteServer.update(target, params);
             reply.send(new PublicReturn(200, '成功', params));

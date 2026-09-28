@@ -33,6 +33,8 @@ export async function start() {
     const port = process.env.PROJECT_PORT;
     const ipAddress = ip.address();
     await ensureDir(getGlobalVariables('serverDataRootDirPath'));
+    await ensureDir(getGlobalVariables('uploadFilesDirPath'));
+    await ensureDir(getGlobalVariables('systemUploadFilesDirPath'));
     await initSql()
         .then(async () => {
             console.log('数据系统: 初始化完成');
