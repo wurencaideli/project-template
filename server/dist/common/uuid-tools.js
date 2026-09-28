@@ -1,0 +1,1 @@
+import shortid from"shortid";import{v4 as uuidV4}from"uuid";export function createShortid(){return shortid.generate().replace(/-/g,"A").replace(/_/g,"a")}export function createUuid(){return uuidV4()}

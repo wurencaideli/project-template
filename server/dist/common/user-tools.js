@@ -1,0 +1,1 @@
+import bcrypt from"bcryptjs";import{v4 as uuidV4}from"uuid";export function hashPassword(r,t=8){return bcrypt.hashSync(r,t)}export function comparePassword(r,t){return bcrypt.compareSync(r,t)}export function createToken(){return uuidV4()}

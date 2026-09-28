@@ -1,0 +1,78 @@
+@import 'dumogu-scrollbar/dist/dumogu-scrollbar.css';
+
+body {
+    margin: 0;
+    padding: 0;
+    * {
+        font-family: 'Microsoft YaHei', Tahoma, 'PingFang SC', 'Helvetica Neue';
+    }
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+/* 不展示滚动条 */
+.no-scroll {
+    overflow: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.no-scroll::-webkit-scrollbar {
+    display: none;
+}
+.one-line {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.multi-line-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; /* 想保留几行就写几 */
+    overflow: hidden;
+}
+.status-1-1 {
+    background: #008df5;
+    color: white;
+}
+.status-1-2 {
+    background: #7c7c7c;
+    color: white;
+}
+.status-2-1 {
+    background: #7c7c7c;
+    color: white;
+}
+.status-2-2 {
+    background: #d98d14;
+    color: white;
+}
+.status-2-3 {
+    background: #00ad1d;
+    color: white;
+}
+.status-2-4 {
+    background: #ff4a4a;
+    color: white;
+}
+.status-2-5 {
+    background: #00ad1d;
+    color: white;
+}
+.define-modal-el {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    overflow: hidden;
+    pointer-events: none;
+}

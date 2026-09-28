@@ -1,0 +1,1 @@
+import md5 from"js-md5";import crypto from"crypto-js";export function getMd5(t){return md5(t)}export function calculateSHA256Hash(t){t=String(t||"");return crypto.SHA256(t).toString()}

@@ -1,0 +1,1 @@
+export function createValidatorFn(e){return r=>{const t=e.safeParse(r,{abortEarly:!0});return t.success?void 0:t.error.issues.map(e=>`${e.path.join(".")}: 需要 ${e.expected}, 实际收到 ${e.received}`).join(";")}}
