@@ -1,0 +1,1 @@
+function a(o={},r={},...s){const t=[];return Object.keys(r).forEach(e=>{const n=r[e];if(!n||Object.prototype.toString.call(n)!=="[object Function]")return;const c=n(o[e],{key:e},...s);c!==!0&&t.push(c)}),t.length==0?void 0:t}export{a as v};
