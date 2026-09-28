@@ -1,0 +1,14 @@
+{
+    "/api": {
+        "target": "http://10.232.62.167:28005",
+        "secure": false,
+        "changeOrigin": true,
+        "followRedirects": true,
+        "logLevel": "debug"
+    },
+    "/hai": {
+        "target": "http://10.232.62.167:28005",
+        "secure": false,
+        "changeOrigin": true
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "outDir": "./dist/out-tsc",
+        "sourceMap": true,
+        "declaration": false,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": false,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "forceConsistentCasingInFileNames": true,
+        "useDefineForClassFields": true,
+        "isolatedModules": true,
+
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "target": "ES2023",
+        "lib": ["ES2023", "dom", "dom.iterable"],
+
+        "typeRoots": ["node_modules/@types"],
+        "experimentalDecorators": true
+    },
+    "angularCompilerOptions": {
+        "enableI18nLegacyMessageIdFormat": false,
+        "strictInjectionParameters": true,
+        "strictInputAccessModifiers": true,
+        "strictTemplates": true
+    }
+}
