@@ -9,6 +9,8 @@ import { createInstance as createUserInstance } from './user.js';
 import { createInstance as createTokenInstance } from './token.js';
 import { createInstance as createFriendlyLinkInstance } from './friendly-link.js';
 import { createInstance as createNoteInstance } from './note.js';
+import { createInstance as createFileInstance } from './file.js';
+import { createInstance as createSystemFileInstance } from './system-file.js';
 
 export let sequelize: any;
 export async function initSql() {
@@ -16,9 +18,9 @@ export async function initSql() {
         await sequelize.close().catch(() => {});
     }
     sequelize = new Sequelize(
-        process.env.DUMOGU_sqlName || '',
-        process.env.DUMOGU_sqlUserName || '',
-        process.env.DUMOGU_sqlPassword || '',
+        process.env.PROJECT_SQL_NAME || '',
+        process.env.PROJECT_SQL_USER_NAME || '',
+        process.env.PROJECT_SQL_PASSWORD || '',
         {
             host: 'localhost',
             dialect: 'mysql',
@@ -32,5 +34,7 @@ export async function initSql() {
     createTokenInstance(sequelize);
     createFriendlyLinkInstance(sequelize);
     createNoteInstance(sequelize);
+    createFileInstance(sequelize);
+    createSystemFileInstance(sequelize);
     await sequelize.sync({ alter: true });
 }

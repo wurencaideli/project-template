@@ -42,7 +42,6 @@ const friendlyLinkUpdateValidator = z.object({
 export const friendlyLinkUpdateValidatorFn = createValidatorFn(friendlyLinkUpdateValidator);
 /** 组合验证器 */
 const userUpdateValidator = z.object({
-    uId: allValidators.uId,
     nickname: allValidators.user.nickname.optional(),
     synopsis: allValidators.user.synopsis.optional(),
     avatar: allValidators.user.avatar.optional(),

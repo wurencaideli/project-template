@@ -1,3 +1,5 @@
+import { Op } from 'sequelize';
+
 import { entityInstance } from '../entity/note.js';
 
 export function list(option: any) {
@@ -18,20 +20,24 @@ export function list(option: any) {
             size,
         }));
 }
-export function allList() {
-    return entityInstance.findAll().then((rows: any) => rows.map((item: any) => item.get({ plain: true })));
-}
-export async function findById(id: string) {
-    const row = await entityInstance.findByPk(id);
+export async function findByUId(uId: string) {
+    const row = await entityInstance.findByPk(uId);
     return (row && row.get({ plain: true })) || undefined;
 }
-export async function find(fn: any) {
-    const list = await allList();
-    return list.find(fn);
-}
-export async function filter(fn: any) {
-    const list = await allList();
-    return list.filter(fn);
+/**
+ * 批量按 uId 查询，用于批量删除。
+ * @param uIds 待查的 uId 列表
+ * @param isAdmin 是否管理员；非管理员只返回自己的数据
+ * @param userUId 当前操作用户的 uId（非 admin 时使用）
+ * @returns sequelize 实例数组，配合 delete_() 使用
+ */
+export async function findByUIdsForDelete(uIds: string[], isAdmin: boolean, userUId: string) {
+    if (!Array.isArray(uIds) || uIds.length === 0) return [];
+    const where: any = { uId: { [Op.in]: uIds } };
+    if (!isAdmin) {
+        where.userUId = userUId;
+    }
+    return entityInstance.findAll({ where });
 }
 export async function add(data: any) {
     const row = await entityInstance.create(data);

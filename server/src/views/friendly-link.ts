@@ -61,7 +61,7 @@ export function createRouter(fastify: FastifyInstance) {
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
             const params: any = request.params || {};
-            const data = await friendlyLinkServer.find((item: any) => item.uId === params.uId);
+            const data = await friendlyLinkServer.findByUId(params.uId);
             if (!data) {
                 reply.code(404).send(new PublicReturn(404, '获取失败: 什么也没找到'));
                 return;
@@ -87,7 +87,7 @@ export function createRouter(fastify: FastifyInstance) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const target = await friendlyLinkServer.find((item: any) => item.name === params.name);
+            const target = await friendlyLinkServer.findByName(params.name);
             if (target) {
                 reply.code(409).send(new PublicReturn(409, '添加失败: 重复数据'));
                 return;
@@ -111,7 +111,7 @@ export function createRouter(fastify: FastifyInstance) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const target = await friendlyLinkServer.find((item: any) => item.uId === params.uId);
+            const target = await friendlyLinkServer.findByUId(params.uId);
             if (!target) {
                 reply.code(404).send(new PublicReturn(404, '修改失败: 未找到相应数据'));
                 return;
@@ -122,18 +122,18 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.delete(
-        '/friendly-link/:ids',
+        '/friendly-link/:uIds',
         {
             preHandler: vAdmin,
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
             const params: any = request.params || {};
-            const ids = (params.ids || '').split(',');
+            const ids = (params.uIds || '').split(',');
             if (ids.length == 0) {
                 reply.code(400).send(new PublicReturn(400, '参数不能为空'));
                 return;
             }
-            const list = await friendlyLinkServer.filter((item: any) => ids.includes(item.uId));
+            const list = await friendlyLinkServer.findByUIds(ids);
             await friendlyLinkServer.delete_(list);
             reply.send(new PublicReturn(200, '成功'));
         },

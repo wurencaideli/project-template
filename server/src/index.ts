@@ -30,7 +30,7 @@ interface Option {
 /** 初始化服务 */
 export async function start() {
     console.log(`当前环境: ${isPro() ? 'pro' : 'dev'}`);
-    const port = process.env.DUMOGU_PORT;
+    const port = process.env.PROJECT_PORT;
     const ipAddress = ip.address();
     await ensureDir(getGlobalVariables('serverDataRootDirPath'));
     await initSql()

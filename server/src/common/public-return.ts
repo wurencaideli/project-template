@@ -14,7 +14,7 @@ export class PublicReturn {
     msg: string | undefined = '';
     data: any = null;
     isPro: boolean = isPro();
-    version: string = process.env.DUMOGU_VERSION || '';
+    version: string = process.env.PROJECT_VERSION || '';
     constructor(status: number, msg?: string, data?: any) {
         this.status = status;
         this.msg = msg;

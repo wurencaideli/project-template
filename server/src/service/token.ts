@@ -10,41 +10,15 @@ export async function init() {
         tokenMap.set(item.token, item.get({ plain: true }));
     });
 }
-export function list(option: any) {
-    const page = option.page || 1;
-    const size = option.size || 15;
-    return entityInstance
-        .findAndCountAll({
-            offset: (page - 1) * size,
-            limit: size,
-        })
-        .then((res: any) => ({
-            list: res.rows.map((item: any) => item.get({ plain: true })),
-            total: res.count,
-            page,
-            size,
-        }));
+export function countByUser(userUId: string): number {
+    let count = 0;
+    for (const row of tokenMap.values()) {
+        if (row?.userUId === userUId) count++;
+    }
+    return count;
 }
-export function allList() {
-    return entityInstance
-        .findAll()
-        .then((rows: any) => rows.map((item: any) => item.get({ plain: true })));
-}
-export async function filter(fn: any) {
-    const list = await allList();
-    return list.filter(fn);
-}
-export async function findByToken(token: string) {
-    const row = await entityInstance.findOne({ where: { token } });
-    return (row && row.get({ plain: true })) || undefined;
-}
-export async function find(fn: any) {
-    const list = await allList();
-    return list.find(fn);
-}
-export async function findSync(fn: any) {
-    const list = await allList();
-    return list.find(fn);
+export function getCachedToken(token: string) {
+    return tokenMap.get(token);
 }
 export async function add(data: any, option: any = {}) {
     const row = await entityInstance.create(data, option);
@@ -75,6 +49,11 @@ export async function delete_(instance: any, option: any = {}) {
     await entityInstance.destroy({ where: { token: tokens }, ...option });
     return list.length;
 }
+export async function deleteByToken(token: string, option: any = {}) {
+    tokenMap.delete(token);
+    await entityInstance.destroy({ where: { token }, ...option });
+    return 1;
+}
 export async function deleteByUser(userUId: string, option: any = {}) {
     for (const key of Array.from(tokenMap.keys())) {
         if (tokenMap.get(key)?.userUId === userUId) {
@@ -88,9 +67,9 @@ export function verifyToken(token: string) {
     if (!token) {
         return { state: false, msg: '验证失败: 请携带参数 token' };
     }
-    const id = token.split('-|-')[1];
+    const userUId = token.split('-|-')[1];
     const tokenRow = tokenMap.get(token);
-    if (!tokenRow || tokenRow.userUId !== id) {
+    if (!tokenRow || tokenRow.userUId !== userUId) {
         return { state: false, msg: '验证失败: 该token无效' };
     }
     return {

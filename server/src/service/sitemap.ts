@@ -6,7 +6,8 @@ import { getGlobalVariables } from '../action/setup-global-variables.js';
 
 /** 更新 */
 export async function update() {
-    const { DUMOGU_Domain } = process.env;
+    const { PROJECT_DOMAIN } = process.env;
+    const PROJECT_BASE_HREF = process.env.PROJECT_BASE_HREF || '/';
     const nowDate = new Date();
     const links: any = [
         { url: '', changefreq: 'daily', priority: 1.0 },
@@ -20,7 +21,7 @@ export async function update() {
             lastmod: nowDate,
         },
     ];
-    const stream = new SitemapStream({ hostname: `https://${DUMOGU_Domain}` });
+    const stream = new SitemapStream({ hostname: `https://${PROJECT_DOMAIN}${PROJECT_BASE_HREF}` });
     const xml = await streamToPromise(Readable.from(links).pipe(stream)).then((data) =>
         data.toString(),
     );

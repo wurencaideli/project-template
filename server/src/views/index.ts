@@ -11,6 +11,8 @@ import { createRouter as createSystemRouter } from './system.js';
 import { createRouter as createFriendlyLinkRouter } from './friendly-link.js';
 import { createRouter as createUserRouter } from './user.js';
 import { createRouter as createNoteRouter } from './note.js';
+import { createRouter as createFileRouter } from './file.js';
+import { createRouter as createSystemFileRouter } from './system-file.js';
 import { createRouter as createWebRssRouter } from './web-rss.js';
 import { createRouter as createWebSitemapRouter } from './web-sitemap.js';
 import { createRouter as createWebRobotsRouter } from './web-robots.js';
@@ -35,6 +37,9 @@ function createServeSpaIndex(distDirPath: string) {
 export async function createRouter(fastify: FastifyInstance) {
     const webAdminDistDirPath: string = getGlobalVariables('webAdminDistDirPath');
     const angularUiDistDirPath: string = getGlobalVariables('angularUiDistDirPath');
+    const uploadFilesDirPath: string = getGlobalVariables('uploadFilesDirPath');
+    const systemUploadFilesDirPath: string = getGlobalVariables('systemUploadFilesDirPath');
+    const PROJECT_BASE_HREF: string = process.env.PROJECT_BASE_HREF || '';
     const serveWebAdminIndex = createServeSpaIndex(webAdminDistDirPath);
     const serveAngularUiIndex = createServeSpaIndex(angularUiDistDirPath);
     await fastify.register(
@@ -44,11 +49,45 @@ export async function createRouter(fastify: FastifyInstance) {
             await createSystemRouter(instance);
             await createFriendlyLinkRouter(instance);
             await createNoteRouter(instance);
+            await createFileRouter(instance);
+            await createSystemFileRouter(instance);
             instance.all('/*', async (_request, reply) => {
                 return reply.code(404).send(new PublicReturn(404, '接口 404 未注册', ''));
             });
         },
-        { prefix: '/api' },
+        { prefix: `${PROJECT_BASE_HREF}api` },
+    );
+    await fastify.register(
+        async (instance) => {
+            instance.setNotFoundHandler(async (request, reply) => {
+                reply.code(404);
+                return new PublicReturn(404, '未找到相应文件', '');
+            });
+            await instance.register(fastifyStatic, {
+                root: uploadFilesDirPath,
+                index: false,
+                list: false,
+                cacheControl: true,
+                maxAge: 31536000,
+            });
+        },
+        { prefix: `${PROJECT_BASE_HREF}api/file/info` },
+    );
+    await fastify.register(
+        async (instance) => {
+            instance.setNotFoundHandler(async (request, reply) => {
+                reply.code(404);
+                return new PublicReturn(404, '未找到相应文件', '');
+            });
+            await instance.register(fastifyStatic, {
+                root: systemUploadFilesDirPath,
+                index: false,
+                list: false,
+                cacheControl: true,
+                maxAge: 31536000,
+            });
+        },
+        { prefix: `${PROJECT_BASE_HREF}api/system-file/info` },
     );
     await fastify.register(
         async (instance) => {
@@ -68,7 +107,7 @@ export async function createRouter(fastify: FastifyInstance) {
                 },
             });
         },
-        { prefix: '/web-admin' },
+        { prefix: `${PROJECT_BASE_HREF}web-admin` },
     );
     await fastify.register(
         async (instance) => {
@@ -91,6 +130,6 @@ export async function createRouter(fastify: FastifyInstance) {
                 },
             });
         },
-        { prefix: '/' },
+        { prefix: `${PROJECT_BASE_HREF}` },
     );
 }

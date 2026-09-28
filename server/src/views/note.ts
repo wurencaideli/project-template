@@ -69,7 +69,7 @@ export function createRouter(fastify: FastifyInstance) {
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
             const params: any = request.params || {};
-            const data: any = await noteServer.findById(params.uId);
+            const data: any = await noteServer.findByUId(params.uId);
             if (!data) {
                 reply.code(404).send(new PublicReturn(404, '获取失败: 什么也没找到'));
                 return;
@@ -128,7 +128,7 @@ export function createRouter(fastify: FastifyInstance) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const target: any = await noteServer.findById(params.uId);
+            const target: any = await noteServer.findByUId(params.uId);
             if (!target) {
                 reply.code(404).send(new PublicReturn(404, '修改失败: 未找到相应数据'));
                 return;
@@ -144,23 +144,23 @@ export function createRouter(fastify: FastifyInstance) {
         },
     );
     fastify.delete(
-        '/note/:ids',
+        '/note/:uIds',
         {
             preHandler: vToken,
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
             const params: any = request.params || {};
-            const ids = (params.ids || '').split(',');
+            const ids = (params.uIds || '').split(',');
             if (ids.length == 0) {
                 reply.code(400).send(new PublicReturn(400, '参数不能为空'));
                 return;
             }
             const userInfo: any = (request as any).userInfo || {};
-            const list = await noteServer.filter((item: any) => {
-                if (!ids.includes(item.uId)) return false;
-                if (userInfo.userRole === 'admin') return true;
-                return item.userUId === userInfo.userUId;
-            });
+            const list = await noteServer.findByUIdsForDelete(
+                ids,
+                userInfo.userRole === 'admin',
+                userInfo.userUId,
+            );
             await noteServer.delete_(list);
             reply.send(new PublicReturn(200, '成功'));
         },

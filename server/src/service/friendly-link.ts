@@ -1,12 +1,17 @@
+import { Op } from 'sequelize';
+
 import { entityInstance } from '../entity/friendly-link.js';
 
 export function list(option: any) {
     const page = option.page || 1;
     const size = option.size || 15;
+    const { sortBy, searchBy } = option;
     return entityInstance
         .findAndCountAll({
+            where: { ...(searchBy || {}) },
             offset: (page - 1) * size,
             limit: size,
+            order: sortBy || [['initDate', 'DESC']],
         })
         .then((res: any) => ({
             list: res.rows.map((item: any) => item.get({ plain: true })),
@@ -15,20 +20,18 @@ export function list(option: any) {
             size,
         }));
 }
-export function allList() {
-    return entityInstance.findAll().then((rows: any) => rows.map((item: any) => item.get({ plain: true })));
-}
-export async function findById(id: string) {
-    const row = await entityInstance.findByPk(id);
+export async function findByUId(uId: string) {
+    const row = await entityInstance.findByPk(uId);
     return (row && row.get({ plain: true })) || undefined;
 }
-export async function find(fn: any) {
-    const list = await allList();
-    return list.find(fn);
+export async function findByName(name: string) {
+    const row = await entityInstance.findOne({ where: { name } });
+    return (row && row.get({ plain: true })) || undefined;
 }
-export async function filter(fn: any) {
-    const list = await allList();
-    return list.filter(fn);
+export async function findByUIds(uIds: string[]) {
+    if (!Array.isArray(uIds) || uIds.length === 0) return [];
+    /** 返回 sequelize 实例，配合 delete_() 使用；不要转 plain 对象 */
+    return entityInstance.findAll({ where: { uId: { [Op.in]: uIds } } });
 }
 export async function add(data: any) {
     return entityInstance.create(data);

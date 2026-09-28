@@ -19,18 +19,10 @@ export function list(option: any) {
             size,
         }));
 }
-export function allList() {
-    return userEntityInstance
-        .findAll()
-        .then((rows: any) => rows.map((item: any) => item.get({ plain: true })));
-}
-export async function filter(fn: any) {
-    const list = await allList();
-    return list.filter(fn);
-}
 export async function getCurrUserSync() {
-    const list = await allList();
-    return list[0] || null;
+    /** 取注册最早的账号作为站点信息（initDate 排序 + LIMIT 1） */
+    const row = await userEntityInstance.findOne({ order: [['initDate', 'ASC']] });
+    return (row && row.get({ plain: true })) || null;
 }
 export async function update(instance: any, user: any) {
     return instance.update(user);
@@ -48,6 +40,45 @@ export async function findByUId(uId: string, option: any = {}) {
     const row = await userEntityInstance.findOne({ where: { uId }, ...option });
     return (row && row.get({ plain: true })) || undefined;
 }
+/** 白名单：本人查询 (/user/info) 时返回的字段，不含 password / secret 等敏感数据 */
+const SAFE_USER_KEYS = [
+    'uId',
+    'initDate',
+    'updateDate',
+    'name',
+    'role',
+    'nickname',
+    'synopsis',
+    'avatar',
+    'about',
+];
+/** 白名单：公开查询 (/user/public-info) 时返回的字段，额外排除 role（不暴露身份权限） */
+const PUBLIC_USER_KEYS = [
+    'uId',
+    'initDate',
+    'updateDate',
+    'name',
+    'nickname',
+    'synopsis',
+    'avatar',
+    'about',
+];
+export function pickSafeUser(user: any) {
+    if (!user) return user;
+    const safe: any = {};
+    for (const key of SAFE_USER_KEYS) {
+        if (user[key] !== undefined) safe[key] = user[key];
+    }
+    return safe;
+}
+export function pickPublicUser(user: any) {
+    if (!user) return user;
+    const safe: any = {};
+    for (const key of PUBLIC_USER_KEYS) {
+        if (user[key] !== undefined) safe[key] = user[key];
+    }
+    return safe;
+}
 export async function add(data: any, option: any = {}) {
     const row = await userEntityInstance.create(data, option);
     return row.get({ plain: true });
@@ -63,14 +94,6 @@ export async function updateSecret(user: any, newSecret: string, option: any = {
         { secret: newSecret, updateDate: new Date().getTime() },
         { where: { uId: user.uId }, ...option },
     );
-}
-export async function find(fn: any) {
-    const list = await allList();
-    return list.find(fn);
-}
-export async function findSync(fn: any) {
-    const list = await allList();
-    return list.find(fn);
 }
 export async function createBaseUserData() {
     const count = await userEntityInstance.count();

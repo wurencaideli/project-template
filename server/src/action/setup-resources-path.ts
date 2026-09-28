@@ -8,7 +8,11 @@ export function injectionResourcesPath() {
     const serverRootDirPath = getGlobalVariables('serverRootDirPath');
     const serverDataRootDirPath = path.join(serverRootDirPath, '../data', isPro() ? 'pro' : 'dev');
     setGlobalVariables('serverDataRootDirPath', serverDataRootDirPath);
-    // RSS / sitemap / 前端 dist 仍走原结构
+    setGlobalVariables('uploadFilesDirPath', path.join(serverDataRootDirPath, 'upload-files'));
+    setGlobalVariables(
+        'systemUploadFilesDirPath',
+        path.join(serverDataRootDirPath, 'system-upload-files'),
+    );
     setGlobalVariables('rssXmlPath', path.join(serverDataRootDirPath, 'rss.xml'));
     setGlobalVariables('sitemapXmlPath', path.join(serverDataRootDirPath, 'sitemap.xml'));
     setGlobalVariables('webAdminDistDirPath', path.join(serverRootDirPath, '../web-admin/dist'));

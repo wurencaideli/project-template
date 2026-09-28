@@ -71,7 +71,7 @@ export function createRouter(fastify: FastifyInstance) {
         async function (request: FastifyRequest, reply: FastifyReply) {
             const params: any = request.body || {};
             params.password = privateDecrypt(params.password || '');
-            const user = await userServer.find((item: any) => item.name == params.name);
+            const user = await userServer.findByName(params.name);
             if (!user) {
                 reply.code(404).send(new PublicReturn(404, '没找到相应用户'));
                 return;
@@ -98,20 +98,16 @@ export function createRouter(fastify: FastifyInstance) {
             preHandler: apiMiddleware.vToken,
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
-            const headers = request.headers || {};
-            const token = String(headers.token) || '';
-            const id = token.split('-|-')[1];
-            const user = await userServer.find((item: any) => item.uId == id);
+            const userInfo: any = (request as any).userInfo || {};
+            const userUId = userInfo.userUId;
+            const user = await userServer.findByUId(userUId);
             if (!user) {
                 reply.code(400).send(new PublicReturn(400, '没找到相应用户'));
                 return;
             }
-            const tokenList = await tokenServer.filter((item: any) => {
-                return item.userUId == user.uId;
-            });
-            user.tokenNumber = tokenList.length;
-            delete user.password;
-            reply.send(new PublicReturn(200, '成功', user));
+            const safeUser = userServer.pickSafeUser(user);
+            safeUser.tokenNumber = tokenServer.countByUser(user.uId);
+            reply.send(new PublicReturn(200, '成功', safeUser));
         },
     );
     fastify.put(
@@ -120,25 +116,21 @@ export function createRouter(fastify: FastifyInstance) {
             preHandler: [apiMiddleware.vToken, getReqLimiter(1, 1000 * 3)],
         },
         async function (request: FastifyRequest, reply: FastifyReply) {
-            const headers = request.headers || {};
-            const token = String(headers.token) || '';
-            const id = token.split('-|-')[1];
-            const mustKeys: any = ['uId', 'nickname', 'synopsis', 'avatar', 'about'];
+            const userInfo: any = (request as any).userInfo || {};
+            const userUId = userInfo.userUId;
+            const mustKeys: any = ['nickname', 'synopsis', 'avatar', 'about'];
             const params: any = justPick(request.body || {}, mustKeys);
             const verifiedData = userUpdateValidatorFn(params);
             if (verifiedData) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            if (id != params.uId) {
-                reply.code(400).send(new PublicReturn(400, '尝试修改其他用户数据'));
-                return;
-            }
-            const user = await userServer.find((item: any) => item.uId == id);
+            const user = await userServer.findByUId(userUId);
             if (!user) {
                 reply.code(404).send(new PublicReturn(404, '没找到相应用户'));
                 return;
             }
+            params.uId = userUId;
             params.updateDate = new Date().getTime();
             await userServer.update(user, params);
             reply.send(new PublicReturn(200, '修改成功', params));
@@ -162,9 +154,8 @@ export function createRouter(fastify: FastifyInstance) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const headers: any = request.headers || {};
-            const token = String(headers.token) || '';
-            const userUId = token.split('-|-')[1];
+            const userInfo: any = (request as any).userInfo || {};
+            const userUId = userInfo.userUId;
             await sequelize.transaction(async (t: any) => {
                 const user: any = await userServer.findByUId(userUId, { transaction: t });
                 if (!user) {
@@ -200,9 +191,8 @@ export function createRouter(fastify: FastifyInstance) {
                 reply.code(400).send(new PublicReturn(400, verifiedData));
                 return;
             }
-            const headers: any = request.headers || {};
-            const token = String(headers.token) || '';
-            const userUId = token.split('-|-')[1];
+            const userInfo: any = (request as any).userInfo || {};
+            const userUId = userInfo.userUId;
             await sequelize.transaction(async (t: any) => {
                 const user: any = await userServer.findByUId(userUId, { transaction: t });
                 if (!user) {
@@ -229,24 +219,35 @@ export function createRouter(fastify: FastifyInstance) {
             const params: any = request.body || {};
             const headers = request.headers || {};
             const token = String(headers.token) || '';
-            const id = token.split('-|-')[1];
-            const tokenList: any = await tokenServer.allList();
-            const user = await userServer.find((item: any) => item.uId == id);
+            const userInfo: any = (request as any).userInfo || {};
+            const userUId = userInfo.userUId;
+            if (params.exitAll === true) {
+                /** 退出该用户所有设备 */
+                await tokenServer.deleteByUser(userUId);
+            } else {
+                /** 退出当前设备 */
+                if (token) {
+                    await tokenServer.deleteByToken(token);
+                }
+            }
+            reply.send(new PublicReturn(200, '成功'));
+        },
+    );
+    fastify.get(
+        '/user/public-info/:uId',
+        async function (request: FastifyRequest, reply: FastifyReply) {
+            const params: any = request.params || {};
+            const uId = String(params.uId || '');
+            if (!uId) {
+                reply.code(400).send(new PublicReturn(400, '参数不能为空: uId'));
+                return;
+            }
+            const user = await userServer.findByUId(uId);
             if (!user) {
                 reply.code(404).send(new PublicReturn(404, '没找到相应用户'));
                 return;
             }
-            /** 删除token，可以删除该用户的所有token */
-            if (params.exitAll === true) {
-                await tokenServer.delete_(tokenList);
-            } else {
-                await tokenServer.delete_(
-                    tokenList.filter((item: any) => {
-                        return item.userUId == user.uId && item.token == token;
-                    }),
-                );
-            }
-            reply.send(new PublicReturn(200, '成功'));
+            reply.send(new PublicReturn(200, '成功', userServer.pickPublicUser(user)));
         },
     );
 }

@@ -5,13 +5,14 @@ import { getGlobalVariables } from '../action/setup-global-variables.js';
 import * as userServer from './user.js';
 
 export async function update() {
-    const { DUMOGU_Domain } = process.env;
+    const { PROJECT_DOMAIN } = process.env;
+    const PROJECT_BASE_HREF = process.env.PROJECT_BASE_HREF || '/';
     const user: any = (await userServer.getCurrUserSync()) || {};
     const feed = new RSS({
         title: user.nickname || '',
         description: user.synopsis || '',
-        feed_url: `https://${DUMOGU_Domain}/rss.xml`,
-        site_url: `https://${DUMOGU_Domain}`,
+        feed_url: `https://${PROJECT_DOMAIN}${PROJECT_BASE_HREF}rss.xml`,
+        site_url: `https://${PROJECT_DOMAIN}${PROJECT_BASE_HREF}`,
         language: 'zh-CN',
         pubDate: new Date(),
         ttl: 60,
