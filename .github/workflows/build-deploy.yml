@@ -39,10 +39,14 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node-version }}
-                  cache: 'pnpm'
 
             - name: Install npm dependencies
               run: |
+                  cd web-admin
+                  pnpm i
+                  cd ../angular-ui
+                  pnpm i
+                  cd ../server
                   pnpm i
 
             - name: Run web-admin build task
@@ -77,8 +81,6 @@ jobs:
                   mkdir -p __deploy/web-admin/dist
                   mkdir -p __deploy/angular-ui/dist
                   mkdir -p __deploy/server/dist
-                  cp pnpm-lock.yaml __deploy/
-                  cp pnpm-workspace.yaml __deploy/
                   cp -r web-admin/dist/. __deploy/web-admin/dist/
                   cp -r angular-ui/dist/. __deploy/angular-ui/dist/
                   cp -r server/dist/. __deploy/server/dist/
@@ -107,9 +109,9 @@ jobs:
                       echo "切换到ROOT用户"
                       sudo su
 
-                      echo "安装根目录依赖"
-                      cd ${{ vars.REMOTE_DIR }}
-                      pnpm i
+                      echo "安装server依赖"
+                      cd ${{ vars.REMOTE_DIR }}/server
+                      pnpm i --prod
 
                       echo "启动PM2服务"
                       pm2 start ${{ vars.REMOTE_DIR }}/server/ecosystem.config.cjs --force
