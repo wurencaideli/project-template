@@ -9,7 +9,7 @@ const path = require('path');
 module.exports = {
     apps: [
         {
-            name: 'dumogu-server',
+            name: 'dumogu-project-template-server',
             script: path.join(__dirname, 'dist/index.js'),
             args: '--model pro',
         },

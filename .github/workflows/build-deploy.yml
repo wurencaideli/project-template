@@ -64,7 +64,7 @@ jobs:
                   cp -r server/dist/. __deploy/server/dist/
                   cp server/ecosystem.config.cjs __deploy/server/
                   cp server/package.json __deploy/server/
-                  cp server/.env.production __deploy/server/
+                  cp server/.env.* __deploy/server/
 
             - name: 上传部署产物
               uses: actions/upload-artifact@v4
