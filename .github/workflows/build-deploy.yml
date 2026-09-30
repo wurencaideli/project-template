@@ -98,7 +98,6 @@ jobs:
                       set -e
                       whoami
                       echo "SSH 连接正常"
-                      echo "REMOTE_DIR ${{ vars.REMOTE_DIR }}"
 
             - name: 清理远端旧产物
               uses: appleboy/ssh-action@v1.2.0
