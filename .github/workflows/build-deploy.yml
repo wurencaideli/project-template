@@ -73,6 +73,8 @@ jobs:
                   path: __deploy/
                   retention-days: 3
                   if-no-files-found: error
+                  # .env.* 属于隐藏文件,upload-artifact 默认静默丢弃,必须显式开启
+                  include-hidden-files: true
 
     deploy:
         name: 部署
@@ -98,6 +100,7 @@ jobs:
                       set -e
                       whoami
                       echo "SSH 连接正常"
+                      echo "REMOTE_DIR ${{ vars.REMOTE_DIR }}"
 
             - name: 清理远端旧产物
               uses: appleboy/ssh-action@v1.2.0
