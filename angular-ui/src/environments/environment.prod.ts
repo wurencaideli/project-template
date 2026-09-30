@@ -1,5 +1,5 @@
 export const environment: any = {
     production: true,
-    baseApi: '/api',
+    baseApi: '/project-template/api',
     deployUrl: '/project-template',
 };
