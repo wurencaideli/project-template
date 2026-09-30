@@ -1,46 +1,35 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: build-deploy
+# 推送 master 触发:先构建三个子项目,产物通过 artifact 交给部署任务,再 rsync 到服务器并重启 PM2
+name: 构建部署
 
 on:
     push:
         branches:
             - master
 
+# 同一时刻只允许一条部署流水线,避免并发部署交叉覆盖远端产物
+concurrency:
+    group: build-deploy
+    cancel-in-progress: true
+
 jobs:
     build:
+        name: 构建
         runs-on: ubuntu-22.04
-        strategy:
-            matrix:
-                node-version: [22]
-
         steps:
-            - uses: actions/checkout@v3
-
-            - name: test ssh
-              uses: appleboy/ssh-action@v1.2.0
-              with:
-                  host: ${{ secrets.REMOTE_HOST }}
-                  username: ${{ secrets.REMOTE_USER }}
-                  key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
-                  port: 22
-                  script: |
-                      whoami
-                      echo "ssh正常连接"
-                      echo "REMOTE_DIR ${{ vars.REMOTE_DIR }}"
+            - name: 检出代码
+              uses: actions/checkout@v4
 
             - name: 安装 pnpm
               uses: pnpm/action-setup@v4
               with:
                   version: 9
 
-            - name: 使用 Node.js ${{ matrix.node-version }} 版本
+            - name: 配置 Node.js 22
               uses: actions/setup-node@v4
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version: 22
 
-            - name: Install npm dependencies
+            - name: 安装依赖
               run: |
                   cd web-admin
                   pnpm i
@@ -49,33 +38,22 @@ jobs:
                   cd ../server
                   pnpm i
 
-            - name: Run web-admin build task
+            - name: 构建 web-admin
               run: |
                   cd web-admin
                   npm run build
 
-            - name: Run angular-ui build task
+            - name: 构建 angular-ui
               run: |
                   cd angular-ui
                   npm run build
 
-            - name: Run server build task
+            - name: 构建 server
               run: |
                   cd server
                   npm run build
 
-            - name: 删除一些冗余文件
-              uses: appleboy/ssh-action@v1.2.0
-              with:
-                  host: ${{ secrets.REMOTE_HOST }}
-                  username: ${{ secrets.REMOTE_USER }}
-                  key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
-                  port: 22
-                  script: |
-                      echo "删除不需要的文件"
-                      rm -rf ${{ vars.REMOTE_DIR }}/web-admin/dist
-
-            - name: Stage files to a temp dir
+            - name: 整理部署产物
               run: |
                   mkdir -p __deploy
                   mkdir -p __deploy/web-admin/dist
@@ -88,7 +66,53 @@ jobs:
                   cp server/package.json __deploy/server/
                   cp server/.env.production __deploy/server/
 
-            - name: Deploy to Server
+            - name: 上传部署产物
+              uses: actions/upload-artifact@v4
+              with:
+                  name: deploy-files
+                  path: __deploy/
+                  retention-days: 3
+                  if-no-files-found: error
+
+    deploy:
+        name: 部署
+        runs-on: ubuntu-22.04
+        needs: build
+        # 声明部署环境,Actions 页面会多一条部署记录,后续可按需加审批保护
+        environment: production
+        steps:
+            - name: 下载部署产物
+              uses: actions/download-artifact@v4
+              with:
+                  name: deploy-files
+                  path: __deploy/
+
+            - name: 测试 SSH 连接
+              uses: appleboy/ssh-action@v1.2.0
+              with:
+                  host: ${{ secrets.REMOTE_HOST }}
+                  username: ${{ secrets.REMOTE_USER }}
+                  key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
+                  port: 22
+                  script: |
+                      set -e
+                      whoami
+                      echo "SSH 连接正常"
+                      echo "REMOTE_DIR ${{ vars.REMOTE_DIR }}"
+
+            - name: 清理远端旧产物
+              uses: appleboy/ssh-action@v1.2.0
+              with:
+                  host: ${{ secrets.REMOTE_HOST }}
+                  username: ${{ secrets.REMOTE_USER }}
+                  key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
+                  port: 22
+                  script: |
+                      set -e
+                      rm -rf ${{ vars.REMOTE_DIR }}/web-admin/dist
+                      rm -rf ${{ vars.REMOTE_DIR }}/angular-ui/dist
+
+            - name: 同步文件到服务器
               uses: easingthemes/ssh-deploy@main
               with:
                   SSH_PRIVATE_KEY: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
@@ -98,7 +122,7 @@ jobs:
                   REMOTE_USER: ${{ secrets.REMOTE_USER }}
                   TARGET: ${{ vars.REMOTE_DIR }}
 
-            - name: 运行 PM2 服务
+            - name: 安装依赖并重启 PM2
               uses: appleboy/ssh-action@v1.2.0
               with:
                   host: ${{ secrets.REMOTE_HOST }}
@@ -106,13 +130,11 @@ jobs:
                   key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
                   port: 22
                   script: |
-                      echo "切换到ROOT用户"
-                      sudo su
-
-                      echo "安装server依赖"
+                      set -e
+                      echo "安装 server 依赖"
                       cd ${{ vars.REMOTE_DIR }}/server
                       pnpm i --prod
 
-                      echo "启动PM2服务"
+                      echo "重启 PM2 服务"
                       pm2 start ${{ vars.REMOTE_DIR }}/server/ecosystem.config.cjs --force
                       pm2 save
