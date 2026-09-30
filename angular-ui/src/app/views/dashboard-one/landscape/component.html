@@ -1,0 +1,28 @@
+<div class="landscape-cp" #landscapeRef>
+    <div class="head">
+        <head-cp [title]="title()" />
+    </div>
+    <div class="filter">
+        <button type="button" class="fill-map-btn" [title]="fillMapLabel()" (click)="toggleFillMap()">
+            <svg-icon [name]="serviceCommonData.fillMap ? 'minimize' : 'maximize'" svgSrcPath="assets/icon-images/" />
+        </button>
+        <div class="color-legend">
+            @for (item of colorLegend(); track item.key) {
+                <span class="legend-item" [class.is-transparent]="item.color === 'transparent'">
+                    <span class="swatch" [style.background]="item.color"></span>
+                    <span class="label">{{ item.label }}</span>
+                </span>
+            }
+        </div>
+        <button type="button" class="refresh-btn" [title]="refreshLabel()" (click)="retryFetch()">
+            <svg-icon name="rotate-ccw" svgSrcPath="assets/icon-images/" />
+        </button>
+    </div>
+    <define-chart-cp #chartRef [isAuto]="false" [isAutoResize]="false" [showLoading]="!!loadState().loading" />
+    @if (loadState().error) {
+        <div class="error">
+            <span>{{ loadState().error }}</span>
+            <div class="retry-btn" (click)="retryFetch()">{{ retryLabel() }}</div>
+        </div>
+    }
+</div>

@@ -7,6 +7,7 @@ import { pipeline } from 'node:stream/promises';
 import { getGlobalVariables } from '../action/setup-global-variables.js';
 import { PublicReturn } from '../common/public-return.js';
 import { createRouter as createPublicRouter } from './public.js';
+import { createRouter as createDashboardRouter } from './dashboard.js';
 import { createRouter as createSystemRouter } from './system.js';
 import { createRouter as createFriendlyLinkRouter } from './friendly-link.js';
 import { createRouter as createUserRouter } from './user.js';
@@ -52,6 +53,7 @@ export async function createRouter(fastify: FastifyInstance) {
                 return reply.code(404).send(new PublicReturn(404, '接口 404 未注册', ''));
             });
             await createPublicRouter(instance);
+            await createDashboardRouter(instance);
             await createUserRouter(instance);
             await createSystemRouter(instance);
             await createFriendlyLinkRouter(instance);

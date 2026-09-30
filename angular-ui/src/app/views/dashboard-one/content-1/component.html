@@ -1,0 +1,21 @@
+<div class="content-1-cp">
+    <div class="head">
+        <head-cp [title]="title()" />
+    </div>
+    <div class="filter">
+        <input type="date" class="date-input" [value]="(form().startMoment | date: 'yyyy-MM-dd') ?? ''" [placeholder]="form().startPlaceholder" (change)="onStartChange({ date: parseDateInput($any($event.target).value) })" />
+        <input type="date" class="date-input" [value]="(form().endMoment | date: 'yyyy-MM-dd') ?? ''" [placeholder]="form().endPlaceholder" (change)="onEndChange({ date: parseDateInput($any($event.target).value) })" />
+        <button type="button" class="refresh-btn" [title]="refreshLabel()" (click)="retryFetch()">
+            <svg-icon name="rotate-ccw" svgSrcPath="assets/icon-images/" />
+        </button>
+    </div>
+    <div class="chart">
+        <define-chart-cp [isAuto]="true" [isAutoResize]="false" [options]="options()" [showLoading]="!!loadState().loading" />
+        @if (loadState().error) {
+            <div class="error">
+                <span>{{ loadState().error }}</span>
+                <div class="retry-btn" (click)="retryFetch()">{{ retryLabel() }}</div>
+            </div>
+        }
+    </div>
+</div>

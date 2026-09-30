@@ -33,6 +33,19 @@ describe('common.utils', () => {
             expect(isEnglish('zh-TW')).toBe(false);
             expect(isEnglish('fr-FR')).toBe(false);
         });
+        it('returns true for en / en_US / EN-us / padded input', () => {
+            expect(isEnglish('en')).toBe(true);
+            expect(isEnglish('en_US')).toBe(true);
+            expect(isEnglish('EN-us')).toBe(true);
+            expect(isEnglish('  en-US  ')).toBe(true);
+        });
+        it('returns false for nullish / empty input or en-prefixed invalid codes', () => {
+            expect(isEnglish(null)).toBe(false);
+            expect(isEnglish(undefined)).toBe(false);
+            expect(isEnglish('')).toBe(false);
+            expect(isEnglish('enm')).toBe(false);
+            expect(isEnglish('english')).toBe(false);
+        });
     });
 
     describe('delay', () => {

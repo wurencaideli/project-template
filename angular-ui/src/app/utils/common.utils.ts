@@ -50,13 +50,17 @@ export function isUndefined(arg: unknown) {
 export function isNullOrUndefined(arg: unknown) {
     return arg == null;
 }
-/** 判断当前语言是否为英文 */
-export function isEnglish(lang: string) {
-    return /^en/i.test(lang || '');
+/**
+ * 判断当前语言是否为英文
+ * 按 BCP 47 主子标签匹配,兼容 en / en-US / en_US / EN-us / Accept-Language 前缀,
+ * 忽略首尾空白;en 后必须紧跟分隔符或结束,避免误命中 enm 等非法前缀
+ */
+export function isEnglish(lang: string | null | undefined): boolean {
+    return /^en([_-]|$)/i.test((lang ?? '').trim());
 }
-/** 判断当前语言是否为中文 */
-export function isChinese(lang: string) {
-    return /^zh/i.test(lang || '');
+/** 判断当前语言是否为中文,规则同 isEnglish */
+export function isChinese(lang: string | null | undefined): boolean {
+    return /^zh([_-]|$)/i.test((lang ?? '').trim());
 }
 /** 根据key获取链接上的参数 */
 export function getQueryParam(url: string, key: string) {

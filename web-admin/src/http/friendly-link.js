@@ -4,7 +4,7 @@ import qs from 'qs';
 const allApi = {
     info(params) {
         return service({
-            url: '/friendly-link/info/' + params.id,
+            url: '/friendly-link/' + params.id,
             method: 'get',
             params: qs.parse(params),
         });
@@ -18,14 +18,14 @@ const allApi = {
     },
     add(params) {
         return service({
-            url: '/friendly-link/add',
+            url: '/friendly-link',
             method: 'post',
             data: qs.parse(params),
         });
     },
     update(params) {
         return service({
-            url: '/friendly-link/update',
+            url: '/friendly-link/' + (params.uId || params.id),
             method: 'put',
             data: qs.parse(params),
         });

@@ -1,0 +1,70 @@
+<div [class.is-fullscreen]="isFullscreen()" class="view-container" #dashboardBody>
+    <div class="view-container-container" #scrollContainer [class.scaling-contain]="scalingMode() === 'contain'" [class.scaling-cover]="scalingMode() === 'cover'" [class.scaling-fixed]="scalingMode() === 'fixed'">
+        <div #dashboardBodyContainer class="show-container fullscreen-container">
+            <div class="show-content">
+                <div class="head-container">
+                    <div class="left">
+                        <div class="bt-list scaling-mode-bt-list">
+                            @for (item of scalingModes(); track item.value) {
+                                <div class="filter-btn" [class.active]="scalingMode() === item.value" (click)="setScalingMode(item.value)">
+                                    {{ item.label }}
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="centre">
+                        <span>{{ title() }}</span>
+                    </div>
+                    <div class="right">
+                        <button type="button" class="icon-btn" (click)="manualRefresh()">
+                            <svg-icon name="rotate-ccw" svgSrcPath="assets/icon-images/" />
+                        </button>
+                        <button type="button" class="icon-btn" [title]="isFullscreen() ? 'reduction' : 'fullscreen'" (click)="selectFullscreen()">
+                            <svg-icon [name]="isFullscreen() ? 'minimize' : 'maximize'" svgSrcPath="assets/icon-images/" />
+                        </button>
+                        <label class="auto-refresh-toggle" [title]="autoRefreshTitle()">
+                            <input type="checkbox" [checked]="openAutoRefresh()" (change)="setAutoRefresh($any($event.target).checked)" />
+                            <span>{{ autoRefreshTooltip() }}</span>
+                        </label>
+                        <span>{{ date() }}</span>
+                        <span>{{ day() }}</span>
+                        <span class="date">{{ time() }}</span>
+                    </div>
+                </div>
+                <div class="top-container">
+                    <top-cp />
+                </div>
+                <div class="content-container">
+                    <div class="left">
+                        <div class="top">
+                            @if (!serviceCommonData()['fillMap']) {
+                                <landscape-cp />
+                            }
+                        </div>
+                        <div class="bottom">
+                            <content-4-cp />
+                        </div>
+                    </div>
+                    <div class="right">
+                        <div class="item">
+                            <content-1-cp />
+                        </div>
+                        <div class="item">
+                            <content-2-cp />
+                        </div>
+                        <div class="item">
+                            <content-3-cp />
+                        </div>
+                    </div>
+                </div>
+                @if (serviceCommonData()['fillMap']) {
+                    <div class="fill-map">
+                        <div class="fill-map-container">
+                            <landscape-cp />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

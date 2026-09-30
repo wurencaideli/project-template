@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
-import { DashboardService } from './views/event-dashboard/service';
-import { InfoDialogService } from './views/event-dashboard/info-dialog/service';
+import { DashboardService } from './views/dashboard-one/service';
+import { InfoDialogService } from './views/dashboard-one/info-dialog/service';
 
 /**
  * 应用路由。全部使用 loadComponent + 路由级 providers,
@@ -22,9 +22,9 @@ export const routes: Routes = [
             import('./views/icon-showcase/component').then((m) => m.IconShowcaseComponent),
     },
     {
-        path: 'event-dashboard',
+        path: 'dashboard-one',
         loadComponent: () =>
-            import('./views/event-dashboard/component').then((m) => m.EventDashboardComponent),
+            import('./views/dashboard-one/component').then((m) => m.DashboardOneComponent),
         providers: [DashboardService, InfoDialogService],
     },
     {

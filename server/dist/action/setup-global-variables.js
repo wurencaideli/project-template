@@ -1,1 +1,0 @@
-import{compressHtml}from"../common/build-tools.js";const data={html404Str:compressHtml("404")};export function setGlobalVariables(t,o){data[t]=o}export function getGlobalVariables(t){return data[t]}

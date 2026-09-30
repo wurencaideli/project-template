@@ -1,1 +1,0 @@
-import UglifyJS from"uglify-js";import htmlMinifier from"html-minifier";export function compressJs(i){return UglifyJS.minify(i,{mangle:{toplevel:!0},nameCache:{}}).code}export function compressHtml(i){return htmlMinifier.minify(i,{collapseWhitespace:!0,removeComments:!0,minifyURLs:!0,minifyJS:i=>i,minifyCSS:!1})}

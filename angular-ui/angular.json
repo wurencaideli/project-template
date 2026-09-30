@@ -21,6 +21,8 @@
                             "base": "dist",
                             "browser": ""
                         },
+                        "baseHref": "/project-template/",
+                        "deployUrl": "/project-template/",
                         "index": "src/index.html",
                         "browser": "src/main.ts",
                         "polyfills": [],
@@ -92,6 +94,7 @@
                 },
                 "serve": {
                     "builder": "@angular/build:dev-server",
+                    "proxyConfig": "proxy-config.json",
                     "configurations": {
                         "production": {
                             "buildTarget": "angular-ui:build:production"

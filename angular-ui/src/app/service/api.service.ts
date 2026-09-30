@@ -1,78 +1,46 @@
-import { Injectable } from '@angular/core';
-import { HttpHeaders, HttpClient, HttpParams } from '@angular/common/http';
-import { TranslateService } from '@ngx-translate/core';
-import { firstValueFrom } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
+import { HttpService } from './http.service';
+import { environment } from '../../environments/environment';
+
+/**
+ * 大屏接口层:统计类接口由项目内 server 服务端提供(Fastify,views/dashboard.ts)。
+ * 返回体为服务端统一的 PublicReturn 信封 {status, msg, data},数据负载在 data 字段,由使用方自行取用。
+ */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-    constructor(
-        private httpClient: HttpClient,
-        private translate: TranslateService,
-    ) {}
-    getLanguage() {
-        return this.translate.currentLang;
+    private readonly httpService = inject(HttpService);
+    /** 顶部汇总卡片统计。约定:卡片 N 的数值字段为 numberN,说明文字字段为 textN,走势数组字段为 chartN(近 24 小时,索引 0 为最早) */
+    summaryStatistics(params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/summary', {}, params);
     }
-    getToken() {
-        return window.localStorage.getItem('csrftoken') || '';
+    /** 按天统计(dashboard-one 折线图)。约定:day 为 'YYYY-MM-DD',系列 N 的数量字段为 countN */
+    dailyCountStatistics(params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/daily-count', {}, params);
     }
-    getHeader() {
-        const token: any = this.getToken();
-        const language: any = this.getLanguage();
-        return {
-            'Content-Type': 'application/json',
-            forgerydefense: token.substr(1, token.length - 2),
-            'language-option': language.substring(1, language.length - 1),
-        };
+    /** 分类统计(dashboard-one 柱状图)。约定:类目字段为 name(「类别N」占位),数量字段为 count */
+    categoryStatistics(params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/category-count', {}, params);
     }
-    /**
-     * 包装接口 Promise，统一获取接口返回的响应体数据。
-     */
-    unwrapResponse<T = any>(promise: Promise<T>): Promise<any> {
-        return promise.catch((error: any) => {
-            if (error instanceof HttpErrorResponse) {
-                const body = error.error;
-                if (body && typeof body === 'object') {
-                    body.httpStatusCode = error.status;
-                    throw body;
-                }
-                if (typeof body === 'string' && body !== '') {
-                    throw { message: body, httpStatusCode: error.status };
-                }
-                throw { message: error.message, httpStatusCode: error.status };
-            }
-            const message =
-                (typeof error === 'string' && error) ||
-                error?.message ||
-                error?.statusText ||
-                '代码执行异常，请联系管理员';
-            throw { message, __originalError: error };
-        });
+    /** 等级分布(饼图)。约定:等级字段 level 取值 '01'~'04',数量字段为 count */
+    levelStatistics(params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/level-count', {}, params);
     }
-    /** post请求 */
-    post<T = any>(url: string, requestParams: any, requestBody: any): Promise<T> {
-        return firstValueFrom(
-            this.httpClient.post<T>(url, requestBody, {
-                responseType: 'json',
-                headers: new HttpHeaders(this.getHeader()),
-                params: new HttpParams({ fromObject: requestParams }),
-            }),
-        );
+    /** 类型统计(dashboard-one 底部柱状图)。约定:类目字段为 name(「类别N」占位),数量字段为 count */
+    typeStatistics(params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/type-count', {}, params);
     }
-    /** get请求 */
-    get<T = any>(url: string, requestParams: any): Promise<T> {
-        return firstValueFrom(
-            this.httpClient.get<T>(url, {
-                responseType: 'json',
-                headers: new HttpHeaders(this.getHeader()),
-                params: new HttpParams({ fromObject: requestParams }),
-            }),
-        );
+    /** 区域统计(地图组件):一次请求返回全部区域数据。约定:入参 regions 传区域名列表,返回 name/count */
+    regionStatistics(params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/region-count', {}, params);
     }
-    // ===== 以下为示例接口方法（仅保留一个作参考，按需删改） =====
-    /** 示例：分页查询文件列表 */
-    queryDisTemplate(body: any): any {
-        const url = '/api/fms-event-monitor/v1/dashboard/query/dis_template';
-        return this.get(url, body);
+    /** 大屏模板配置:标题/地图类型(dashboard-one 启动时拉取写入 commonData) */
+    queryDashboardConfig(_params: any): any {
+        return this.httpService.post(this.httpService.baseApi + '/dashboard/config', {}, _params);
+    }
+    /** 地图 GeoJSON:直接读取本地 assets 静态资源,无需后端 */
+    getGeoData(mapType: any): any {
+        const url = `${environment.deployUrl}/assets/geo/${mapType}.json`;
+        return this.httpService.get(url, {});
     }
 }

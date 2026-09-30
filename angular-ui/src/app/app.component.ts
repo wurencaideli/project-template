@@ -31,9 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private readonly meta = inject(Meta);
     private readonly router = inject(Router);
     private readonly destroyRef = inject(DestroyRef);
-
     private currentRouteClass = '';
-
     ngOnInit(): void {
         this.meta.updateTag({
             name: 'app-code-version',
@@ -47,7 +45,6 @@ export class AppComponent implements OnInit, OnDestroy {
             name: 'app-build-info',
             content: `buildTime=${BUILD_INFO.buildTime}; timestamp=${BUILD_INFO.timestamp}; buildUser=${BUILD_INFO.buildUser}; hostname=${BUILD_INFO.hostname}; platform=${BUILD_INFO.platform}; arch=${BUILD_INFO.arch}; osRelease=${BUILD_INFO.osRelease}; nodeVersion=${BUILD_INFO.nodeVersion}; npmVersion=${BUILD_INFO.npmVersion}; ci=${BUILD_INFO.ci}; ciName=${BUILD_INFO.ciName}`,
         });
-
         this.router.events
             .pipe(
                 filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -64,11 +61,9 @@ export class AppComponent implements OnInit, OnDestroy {
                 this.setRouteClass(className ? `page-path-${className}` : '');
             });
     }
-
     ngOnDestroy(): void {
         this.clearRouteClass();
     }
-
     private setRouteClass(className: string): void {
         if (this.currentRouteClass) {
             document.body.classList.remove(this.currentRouteClass);
@@ -78,7 +73,6 @@ export class AppComponent implements OnInit, OnDestroy {
         }
         this.currentRouteClass = className;
     }
-
     private clearRouteClass(): void {
         if (this.currentRouteClass) {
             document.body.classList.remove(this.currentRouteClass);

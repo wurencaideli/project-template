@@ -13,3 +13,11 @@ function createS(key: string, value: any) {
 export const useParamsStorage = () => {
     return createS('params-container', {});
 };
+/** 大屏(dashboard-one)缩放模式,'cover' | 'contain' */
+export const useScalingModeStorage = () => {
+    return createS('dashboard-one-scaling-mode', '');
+};
+/** 语言选项,'en-US' / 'zh-CN' */
+export const useLanguageStorage = () => {
+    return createS('language-option', '');
+};

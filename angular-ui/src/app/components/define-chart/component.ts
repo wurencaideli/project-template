@@ -28,7 +28,9 @@ use([SVGRenderer]);
     template: `
         <div class="chart-host" #componentRef>
             @if (showLoading()) {
-                <div class="chart-loading"></div>
+                <div class="chart-loading">
+                    <div class="chart-loading__spinner"></div>
+                </div>
             }
         </div>
     `,
@@ -50,8 +52,26 @@ use([SVGRenderer]);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: rgba(15, 23, 42, 0.45);
+                background: radial-gradient(
+                    circle,
+                    rgba(0, 0, 0, 0.9) 0%,
+                    rgba(0, 0, 0, 0.45) 55%,
+                    rgba(0, 0, 0, 0) 100%
+                );
                 z-index: 2;
+            }
+            .chart-loading__spinner {
+                width: 40px;
+                height: 40px;
+                border: 4px solid rgba(148, 163, 184, 0.25);
+                border-top-color: #1993ff;
+                border-radius: 50%;
+                animation: chart-spin 1s linear infinite;
+            }
+            @keyframes chart-spin {
+                to {
+                    transform: rotate(360deg);
+                }
             }
         `,
     ],
@@ -73,7 +93,12 @@ export class DefineChartComponent implements OnDestroy {
 
     constructor() {
         effect(() => {
-            this.currentOptions.set(this.options());
+            const opts = this.options();
+            this.currentOptions.set(opts);
+            // isAuto 时,init 之后的 options 变更自动应用到图表(首次应用仍在 ngAfterViewInit)
+            if (this.isAuto() && this.chartInstance) {
+                this.setOption(opts);
+            }
         });
     }
 

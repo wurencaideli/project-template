@@ -1,0 +1,124 @@
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.content-3-cp {
+    width: 100%;
+    height: 100%;
+    pointer-events: initial;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #070e26;
+    box-shadow: inset 0px 0px 34px 0px rgba(42, 80, 216, 0.5);
+    border-radius: var(--dashboard-size_7);
+    padding: var(--dashboard-size_47) 0 0 0;
+    gap: var(--dashboard-size_8);
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-image: url(../../../../assets/dashboard-img/box-right-background.png);
+    > .head {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0;
+        box-sizing: border-box;
+        min-height: var(--dashboard-size_47);
+        z-index: 1;
+    }
+    > .filter {
+        transform: scale(var(--dashboard-scaling-factor));
+        transform-origin: right top;
+        position: absolute;
+        top: var(--dashboard-size_8);
+        right: var(--dashboard-size_8);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--dashboard-size_18);
+        padding: 0;
+        box-sizing: border-box;
+        width: fit-content;
+        z-index: 2;
+        // 父元素已用了缩放，此处使用固定单位
+        > .bt-list {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 32px;
+            > .filter-btn {
+                background: #58585887;
+                height: 100%;
+                color: #d6f3ff;
+                font-size: 14px;
+                padding: 0px 16px;
+                cursor: pointer;
+                border: none;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-right: 1px solid #00000094;
+                &:last-child {
+                    border: none;
+                }
+                &.active {
+                    color: #d6f3ff;
+                    background: #006ecf;
+                }
+            }
+        }
+        > .refresh-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 0;
+            margin: 0;
+        }
+    }
+    > .chart {
+        flex: 1 1 0;
+        height: 0;
+        width: 100%;
+        padding: 0 var(--dashboard-size_8) var(--dashboard-size_8) var(--dashboard-size_8);
+        box-sizing: border-box;
+        position: relative;
+        > .error {
+            z-index: 2;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: var(--dashboard-size_12);
+            > .retry-btn {
+                color: #029af2;
+                cursor: pointer;
+                margin-left: var(--dashboard-size_8);
+            }
+        }
+    }
+}

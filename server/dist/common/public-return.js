@@ -1,1 +1,0 @@
-import{isPro}from"./other-tools.js";export class PublicReturn{status=200;msg="";data=null;isPro=isPro();version=process.env.DUMOGU_VERSION||"";constructor(s,t,o){this.status=s,this.msg=t,this.data=o}}

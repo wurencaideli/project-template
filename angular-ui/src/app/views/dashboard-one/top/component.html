@@ -1,0 +1,23 @@
+<div class="top-cp">
+    @for (item of cardList(); track item.id) {
+        <div class="item" (click)="showInfo()">
+            <div class="left"></div>
+            <div class="content">
+                <div class="title">{{ item.title }}</div>
+                <div class="number">
+                    {{ item.number }}
+                </div>
+                <div class="text">{{ item.text }}</div>
+            </div>
+            <div class="chart">
+                <define-chart-cp [isAuto]="true" [isAutoResize]="false" [options]="item.options" [showLoading]="!!loadState().loading" />
+            </div>
+        </div>
+    }
+    @if (loadState().error) {
+        <div class="error">
+            <span>{{ loadState().error }}</span>
+            <div class="retry-btn" (click)="retryFetch()">{{ retryLabel }}</div>
+        </div>
+    }
+</div>
