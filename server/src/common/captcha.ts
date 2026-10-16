@@ -5,7 +5,7 @@ import { createUuid } from './uuid-tools.js';
 const captchaMap = new Map();
 type SvgCaptcha = {
     svg: string;
-    id: string;
+    key: string;
 };
 /**
  * 创建一个验证码
@@ -20,25 +20,25 @@ export function create(): SvgCaptcha {
     });
     const uuid = createUuid();
     captchaMap.set(uuid, {
-        id: uuid,
-        text: captcha.text.toLowerCase(),
+        key: uuid,
+        value: captcha.text.toLowerCase(),
         overtime: new Date().getTime() + 1000 * 60 * 7,
     });
     return {
         svg: captcha.data,
-        id: uuid,
+        key: uuid,
     };
 }
 /**
  * 验证，不考虑验证码过期
  */
-export function verify(id: string, text: string): boolean {
-    const p = captchaMap.get(id);
+export function verify(key: string, value: string): boolean {
+    const p = captchaMap.get(key);
     if (!p) return false;
-    text = text + '';
-    text = text.toLowerCase();
-    if (p.text !== text) return false;
-    captchaMap.delete(id);
+    value = value + '';
+    value = value.toLowerCase();
+    if (p.value !== value) return false;
+    captchaMap.delete(key);
     return true;
 }
 /**
@@ -48,6 +48,6 @@ export function verifyOverTime() {
     const nowDate = new Date().getTime();
     captchaMap.forEach((item) => {
         if (item.overtime >= nowDate) return;
-        captchaMap.delete(item.id);
+        captchaMap.delete(item.key);
     });
 }
