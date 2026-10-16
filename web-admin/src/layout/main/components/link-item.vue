@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
 import { reactive, toRef } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
+
+import SvgIcon from '~/components/svg-icon.vue';
 
 export default {
     name: 'LinkItem',
@@ -19,7 +20,7 @@ export default {
     },
     setup(props) {
         const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             dataInfo: toRef(props, 'dataInfo'),
         });
         return {
@@ -34,9 +35,9 @@ export default {
     <div class="link-item-cp">
         <div class="top">
             <SvgIcon
-                v-if="dataContainer.dataInfo.iconName"
+                v-if="dataContainer.dataInfo.menuIconName"
                 :style="'width: 17px;min-width:17px;height: 17px;'"
-                :name="dataContainer.dataInfo.iconName"
+                :name="dataContainer.dataInfo.menuIconName"
             ></SvgIcon>
             {{ dataContainer.dataInfo.title }}
         </div>

@@ -1,10 +1,8 @@
-<script>
-/**
- * 左侧菜单组件
- */
+<script lang="ts">
 import { defineComponent, ref, reactive, onMounted, toRef } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
+
+import SvgIcon from '~/components/svg-icon.vue';
 import MenuItem from './menu-item.vue';
 
 export default defineComponent({
@@ -14,8 +12,7 @@ export default defineComponent({
         MenuItem,
     },
     props: {
-        /** 所显示的数据列表 */
-        dataList: {
+        menuTree: {
             type: Array,
             default: () => {
                 return [];
@@ -24,17 +21,17 @@ export default defineComponent({
     },
     setup(props) {
         const route = useRoute();
-        const ElMenuRef = ref(null);
-        const dataContainer = reactive({
-            dataList: toRef(props, 'dataList'),
+        const ElMenuRef = ref<any>(null);
+        const dataContainer: any = reactive({
+            menuTree: toRef(props, 'menuTree'),
         });
         /**
          * 当页面加载后设置设置当前打开的父节点，因为如果父节点可点击的话不会自动打开
          * */
         onMounted(() => {
             if (!ElMenuRef.value) return;
-            let el = ElMenuRef.value.$el;
-            let hasActiveSubEl = el.querySelector('.el-sub-menu .is-sub-defin-active');
+            const el = ElMenuRef.value.$el;
+            const hasActiveSubEl = el.querySelector('.el-sub-menu .is-sub-define-active');
             if (!hasActiveSubEl) return;
             ElMenuRef.value.open(route.path);
         });
@@ -56,8 +53,8 @@ export default defineComponent({
         :router="false"
     >
         <MenuItem
-            v-for="(item, index) in dataContainer.dataList"
-            :key="item.path"
+            v-for="(item, index) in dataContainer.menuTree"
+            :key="item.uId"
             :dataInfo="item"
         ></MenuItem>
     </el-menu>
@@ -67,7 +64,7 @@ export default defineComponent({
 .menu-container {
     width: 100%;
     border: none !important;
-    padding: 0 10px 10px 10px;
+    padding: 10px 10px 10px 10px;
     box-sizing: border-box;
     /** 基础目录配置 */
     --local-active-text-color: #ffffff;
@@ -76,7 +73,7 @@ export default defineComponent({
     --local-hover-color: #3634ac57;
     --local-font-size: 15px;
     --local-text-color: #a8bacc;
-    --local-box-shadow: 0 1px 4px #001247;
+    --local-box-shadow: 0 2px 4px #00124763;
     --local-border-radius: 8px;
     --el-menu-active-color: var(--local-active-text-color) !important;
     --el-menu-item-font-size: var(--local-font-size) !important;
@@ -118,7 +115,7 @@ export default defineComponent({
                 right: 10px !important;
                 font-size: 20px !important;
             }
-            &.is-sub-defin-active {
+            &.is-sub-define-active {
                 > .el-sub-menu__title {
                     background-color: var(--active-item-bg-color);
                     // font-weight: bold;
@@ -127,7 +124,7 @@ export default defineComponent({
                 }
             }
             /** 表示有已经活动的sub目录 */
-            &:has(.is-sub-defin-active) {
+            &:has(.is-sub-define-active) {
                 background-color: var(--active-sub-bg-color);
                 > .el-sub-menu__title {
                     background-color: var(--local-active-sub-bg-color);

@@ -1,18 +1,19 @@
-<script>
-import { defineComponent, onBeforeUnmount, reactive, ref } from 'vue';
+<script lang="ts">
+import { defineComponent, onBeforeUnmount, reactive, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { copyValue } from '@/common/other-tools.js';
-import DictTags from '@/components/dict-tags.vue';
-import { debounceFn } from '@/common/debounce-and-throttle.js';
-import { messageSuccess, confirm } from '@/action/message-prompt.js';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { hasPermi } from '@/action/power-tools.js';
 import { saveAs } from 'file-saver';
-import postApi from '@/http/post.js';
-import { messageError } from '@/action/message-prompt.js';
-import { getMittInstance, destroyMittInstance } from '@/common/define-event.js';
-import { themeList, typeList } from '@/action/option-list.js';
-import { timestampToStr } from '@/common/date-tools.js';
+
+import { copyValue } from '~/common/common-tools.ts';
+import DictTags from '~/components/dict-tags.vue';
+import { throttleFn } from '~/common/debounce-and-throttle.ts';
+import { messageSuccess, confirm } from '~/action/message-prompt.ts';
+import SvgIcon from '~/components/svg-icon.vue';
+import postApi from '~/http/post.ts';
+import { messageError } from '~/action/message-prompt.ts';
+import { getMittInstance, destroyMittInstance } from '~/common/define-event.ts';
+import { themeList, typeList } from '~/action/option-list.ts';
+import { timestampToStr } from '~/common/date-tools.ts';
+import { userDataStore } from '~/store/user.ts';
 
 export default defineComponent({
     components: {
@@ -20,55 +21,68 @@ export default defineComponent({
         SvgIcon,
     },
     setup() {
-        const QueryFormRef = ref(null);
+        const QueryFormRef = ref<any>(null);
         const router = useRouter();
-        const dataContainer = reactive({
-            loading: false,
+        const userData = userDataStore();
+        /** 按钮权限map，用于按钮的显示控制 */
+        const permissionBtCodeMap = computed(() => {
+            return userData.permissionBtCodeMap;
+        });
+        const dataContainer: any = reactive({
             form: {},
             params: {
-                //基础参数
                 page: 1,
                 size: 15,
             },
-            config: {
-                total: 0,
-            },
-            list: [], //当前展示的数据列表
-            currentRows: [], //当前多选的数据列表
             typeList: typeList,
             themeList: themeList,
+            getDataStatus: {
+                total: 0,
+                list: [],
+                loading: false,
+                currentRows: [],
+            },
+            deleteDataStatus: {
+                loading: false,
+            },
+            updateHtmlStatus: {
+                loading: false,
+            },
         });
         /** 获取数据列表 */
-        const getDataList = debounceFn(function () {
-            if (dataContainer.loading) return;
-            dataContainer.loading = true;
+        const getDataList = throttleFn(function () {
+            const getDataStatus = {
+                total: 0,
+                list: [],
+                loading: true,
+                currentRows: [],
+            };
+            dataContainer.getDataStatus = getDataStatus;
             const params = Object.assign({}, dataContainer.form, dataContainer.params);
             postApi
                 .list(params)
-                .then((res) => {
+                .then((res: any) => {
                     const data = res.data || {};
-                    dataContainer.list = data.list || [];
-                    dataContainer.config.total = data.total;
+                    getDataStatus.list = data.list || [];
+                    getDataStatus.total = data.total;
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 })
                 .finally(() => {
-                    dataContainer.loading = false;
+                    getDataStatus.loading = false;
+                    dataContainer.getDataStatus = { ...dataContainer.getDataStatus };
                 });
         }, 300);
         getDataList();
         /** 双击单元格，复制单元格内容 */
-        function handleCopyVale(_, __, ___, event) {
+        function handleCopyVale(_: any, __: any, ___: any, event: any) {
             copyValue(event.target.innerText);
             messageSuccess('复制成功，内容为：' + event.target.innerText);
         }
         /** 排序触发事件 */
-        function handleSortChange(column, prop, order) {
+        function handleSortChange(column: any) {
             dataContainer.form.orderByColumn = column.prop;
             dataContainer.form.isAsc = column.order;
             getDataList();
@@ -88,8 +102,8 @@ export default defineComponent({
         }
         /** 导出数据 */
         function handleExport() {
-            let str = '保存字符串的例子！！';
-            let strData = new Blob([str], { type: 'text/plain;charset=utf-8' });
+            const str = '保存字符串的例子！！';
+            const strData = new Blob([str], { type: 'text/plain;charset=utf-8' });
             saveAs(strData, '测试文件下载.txt');
             messageSuccess('导出成功！');
         }
@@ -100,48 +114,50 @@ export default defineComponent({
             });
         }
         /** 详情按钮操作 */
-        function handleDetails(row, querys) {
+        function handleDetails(row: any, query: any) {
             router.push({
                 name: 'post-info',
                 params: {
                     sign: row.id,
                 },
-                query: querys,
+                query: query,
             });
         }
         /** 编辑按钮操作 */
-        function handleEdit(row, querys) {
+        function handleEdit(row: any, query: any) {
             router.push({
                 name: 'post-update',
                 params: {
                     sign: row.id,
                 },
-                query: querys,
+                query: query,
             });
         }
         /** 删除 */
-        function handleDelete(rows) {
+        function handleDelete(rows: any) {
             confirm('确认删除所选数据？', '提示！')
                 .then(async () => {
-                    dataContainer.loading = true;
-                    let state = await postApi
+                    const deleteDataStatus = {
+                        loading: true,
+                    };
+                    dataContainer.deleteDataStatus = deleteDataStatus;
+                    const state = await postApi
                         .delete({
-                            id: rows.map((item) => item.id).join(','),
+                            id: rows.map((item: any) => item.id).join(','),
                         })
                         .then(() => {
                             messageSuccess('删除成功');
                             return true;
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg =
+                                res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                             return false;
                         })
                         .finally(() => {
-                            dataContainer.loading = false;
+                            deleteDataStatus.loading = false;
+                            dataContainer.deleteDataStatus = { ...dataContainer.deleteDataStatus };
                         });
                     if (state) {
                         getDataList();
@@ -153,64 +169,69 @@ export default defineComponent({
         function updatePostHtml() {
             confirm('确认重新生成HTML文件？', '提示！')
                 .then(async () => {
-                    dataContainer.loading = true;
+                    const updateHtmlStatus = {
+                        loading: true,
+                    };
+                    dataContainer.updateHtmlStatus = updateHtmlStatus;
                     await postApi
                         .updatePostHtml()
                         .then(() => {
                             messageSuccess('生成成功');
                             return true;
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg =
+                                res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                             return false;
                         })
                         .finally(() => {
-                            dataContainer.loading = false;
+                            updateHtmlStatus.loading = false;
+                            dataContainer.updateHtmlStatus = { ...dataContainer.updateHtmlStatus };
                         });
                 })
                 .catch(() => {});
         }
         /** 重新生成HTML文件 */
-        function updatePostInfoHtml(data) {
+        function updatePostInfoHtml(data: any) {
             confirm('确认重新生成HTML文件？', '提示！')
                 .then(async () => {
-                    dataContainer.loading = true;
+                    const updateHtmlStatus = {
+                        loading: true,
+                    };
+                    dataContainer.updateHtmlStatus = updateHtmlStatus;
                     await postApi
                         .updatePostInfoHtml(data)
                         .then(() => {
                             messageSuccess('生成成功');
                             return true;
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg =
+                                res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                             return false;
                         })
                         .finally(() => {
-                            dataContainer.loading = false;
+                            updateHtmlStatus.loading = false;
+                            dataContainer.updateHtmlStatus = { ...dataContainer.updateHtmlStatus };
                         });
                 })
                 .catch(() => {});
         }
         /** 注册事件 */
-        let emitter = getMittInstance(`refreash-post-data`);
+        const emitter = getMittInstance(`refresh-post-data`);
         emitter.all?.clear();
-        emitter.on(`refreash`, async () => {
+        emitter.on(`refresh`, async () => {
             getDataList();
         });
         onBeforeUnmount(() => {
-            destroyMittInstance(`refreash-post-data`);
+            destroyMittInstance(`refresh-post-data`);
         });
         return {
             QueryFormRef,
             dataContainer,
+            permissionBtCodeMap,
             getDataList,
             handleCopyVale,
             handleSortChange,
@@ -221,7 +242,6 @@ export default defineComponent({
             handleDetails,
             handleEdit,
             handleDelete,
-            hasPermi,
             timestampToStr,
             updatePostHtml,
             updatePostInfoHtml,
@@ -298,14 +318,14 @@ export default defineComponent({
                                 <el-button type="primary" @click="handleQuery">
                                     <SvgIcon
                                         :style="'width:15px;height:15px;margin-right:5px;'"
-                                        name="svg:search-bt.svg"
+                                        name="svg:search.svg"
                                     ></SvgIcon>
                                     查询
                                 </el-button>
                                 <el-button @click="resetQuery">
                                     <SvgIcon
                                         :style="'width:15px;height:15px;margin-right:5px;'"
-                                        name="svg:redo.svg"
+                                        name="svg:rotate-cw.svg"
                                     ></SvgIcon>
                                     重置
                                 </el-button>
@@ -319,20 +339,30 @@ export default defineComponent({
             <div class="top-container">
                 <div class="left">
                     <el-button
-                        v-if="hasPermi(['yx:apply:apply'])"
                         type="primary"
+                        v-if="permissionBtCodeMap['post-list:add']"
                         @click="handleAdd"
                     >
                         新增
                     </el-button>
-                    <el-button plain type="primary" @click="handleExport"> 导出 </el-button>
+                    <el-button
+                        plain
+                        type="primary"
+                        v-if="permissionBtCodeMap['post-list:export']"
+                        @click="handleExport"
+                    >
+                        导出
+                    </el-button>
                     <el-button
                         plain
                         type="danger"
-                        v-if="dataContainer.currentRows.length > 0"
-                        @click="handleDelete(dataContainer.currentRows)"
+                        v-if="
+                            permissionBtCodeMap['post-list:delete'] &&
+                            dataContainer.getDataStatus.currentRows.length > 0
+                        "
+                        @click="handleDelete(dataContainer.getDataStatus.currentRows)"
                     >
-                        批量删除：{{ dataContainer.currentRows.length }}
+                        批量删除：{{ dataContainer.getDataStatus.currentRows.length }}
                     </el-button>
                     <el-button plain type="primary" @click="updatePostHtml">
                         生成文章HTML文件
@@ -340,14 +370,21 @@ export default defineComponent({
                 </div>
                 <div class="right">
                     <el-button circle @click="resetQuery">
-                        <SvgIcon :style="'width:15px;height:15px;'" name="svg:redo.svg"></SvgIcon>
+                        <SvgIcon
+                            :style="'width:15px;height:15px;'"
+                            name="svg:rotate-cw.svg"
+                        ></SvgIcon>
                     </el-button>
                 </div>
             </div>
             <div class="table-container">
                 <el-table
-                    v-loading="dataContainer.loading"
-                    :data="dataContainer.list"
+                    v-loading="
+                        dataContainer.getDataStatus.loading ||
+                        dataContainer.deleteDataStatus.loading ||
+                        dataContainer.updateHtmlStatus.loading
+                    "
+                    :data="dataContainer.getDataStatus.list"
                     border
                     @cell-dblclick="handleCopyVale"
                     @sort-change="handleSortChange"
@@ -486,7 +523,12 @@ export default defineComponent({
                             <el-button link type="primary" @click="updatePostInfoHtml(scope.row)">
                                 更新HTML
                             </el-button>
-                            <el-button link type="danger" @click="handleDelete([scope.row])">
+                            <el-button
+                                link
+                                type="danger"
+                                v-if="permissionBtCodeMap['post-list:delete']"
+                                @click="handleDelete([scope.row])"
+                            >
                                 删除
                             </el-button>
                         </template>
@@ -496,7 +538,7 @@ export default defineComponent({
             <div class="pagination-container">
                 <el-pagination
                     v-show="true"
-                    :total="dataContainer.config.total"
+                    :total="dataContainer.getDataStatus.total"
                     :background="true"
                     :current-page="dataContainer.params.page"
                     :page-size="dataContainer.params.size"

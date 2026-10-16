@@ -1,18 +1,16 @@
-<script>
-/**
- * 首页
- */
+<script lang="ts">
 import { defineComponent, reactive } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import DefinScrollbar from '@/components/defin-scrollbar.vue';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import DefineScrollbar from '~/components/define-scrollbar.vue';
 
 export default defineComponent({
     components: {
         SvgIcon,
-        DefinScrollbar,
+        DefineScrollbar,
     },
     setup() {
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             name: import.meta.env.VITE_APP_name,
             loading: false,
         });
@@ -24,7 +22,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <DefinScrollbar height="100%" :showUpBt="true">
+    <DefineScrollbar height="100%" :showUpBt="true">
         <div class="page-container main-view">
             <div class="container">
                 <h1>{{ dataContainer.name }}</h1>
@@ -38,7 +36,7 @@ export default defineComponent({
                         rel="noopener noreferrer"
                         style="color: #a8a0f1; font-weight: bold"
                     >
-                        DEMO（elment-plus + vue3）
+                        DEMO（element-plus + vue3）
                     </a>
                 </p>
                 <p>
@@ -66,7 +64,7 @@ export default defineComponent({
                 </p>
             </div>
         </div>
-    </DefinScrollbar>
+    </DefineScrollbar>
 </template>
 
 <style lang="scss" scoped>

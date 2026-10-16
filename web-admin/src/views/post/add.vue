@@ -1,28 +1,30 @@
-<script>
+<script lang="ts">
 import { defineComponent, ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import SvgIcon from '@/components/svg-icon/index.vue';
 import { Delete } from '@element-plus/icons-vue';
-import { verifieData } from '@/common/verifie-tools.js';
-import { messageError, messageSuccess } from '@/action/message-prompt.js';
-import { findTag, updateTag, deleteTags } from '@/action/tag-list-tools.js';
-import postApi from '@/http/post.js';
-import definScrollbar from '@/components/defin-scrollbar.vue';
-import { getMittInstance } from '@/common/define-event.js';
-import mdEditor from '@/components/md-editor.vue';
-import { themeList, typeList } from '@/action/option-list.js';
+import { z } from 'zod';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import { messageError, messageSuccess } from '~/action/message-prompt.ts';
+import { findTag, updateTag, deleteTags } from '~/store/tag-manage.ts';
+import { findPermissionConfigByRoutePath } from '~/store/user-manage.ts';
+import postApi from '~/http/post.ts';
+import DefineScrollbar from '~/components/define-scrollbar.vue';
+import { getMittInstance } from '~/common/define-event.ts';
+import MdEditor from '~/components/md-editor.vue';
+import { themeList, typeList } from '~/action/option-list.ts';
 
 export default defineComponent({
     components: {
         SvgIcon,
         Delete,
-        mdEditor,
+        MdEditor,
     },
     setup() {
-        const FormElRef = ref(null); //组件实例
+        const FormElRef = ref<any>(null);
         const router = useRouter();
         const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             isShow: false,
             loading: false,
             form: {},
@@ -37,10 +39,10 @@ export default defineComponent({
          * 数据初始化
          */
         function initData() {
-            let params = route.params;
+            const params = route.params;
             if (!params.sign) return;
-            const querys = route.query || {};
-            dataContainer.isShow = querys.isShow === 'true';
+            const query = route.query || {};
+            dataContainer.isShow = query.isShow === 'true';
             dataContainer.form = {
                 id: params.sign,
             };
@@ -55,25 +57,20 @@ export default defineComponent({
                 .info({
                     id: dataContainer.form.id,
                 })
-                .then((res) => {
+                .then((res: any) => {
                     const data = res.data || {};
                     dataContainer.form = data;
                     /** 更新标签 */
-                    let tag = findTag(route.path) || {};
+                    const config = findPermissionConfigByRoutePath(route.path);
+                    const tag = findTag(route.path, config?.layoutGroupSign) || ({} as any);
                     if (!tag) return;
                     updateTag({
-                        tag: {
-                            ...tag,
-                            title: `文章${route.params.sign ? '修改' : '添加'}:${data.name}`,
-                        },
-                        layoutName: tag.layoutName,
+                        ...tag,
+                        title: `文章${route.params.sign ? '修改' : '添加'}:${data.name}`,
                     });
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 })
                 .finally(() => {
@@ -84,47 +81,42 @@ export default defineComponent({
         function handleSubmit() {
             /** 使用组件自带方法验证数据 */
             if (!FormElRef.value) return;
-            FormElRef.value.validate((valid, e) => {
+            FormElRef.value.validate((valid: any, e: any) => {
                 if (e) {
                     /** 打印报错信息 */
-                    let msg = e[Object.keys(e)[0]][0].message;
+                    const msg = e[Object.keys(e)[0]][0].message;
                     messageError(msg);
                 }
                 if (!valid) return;
                 const verifiedData = validData(dataContainer.form);
                 if (verifiedData) {
-                    messageError(verifiedData[0].label);
+                    messageError(verifiedData);
                     return;
                 }
                 /** 向后端提交 */
                 if (dataContainer.loading) return;
                 dataContainer.loading = true;
-                let task;
-                if (dataContainer.form.id) {
-                    task = postApi.update(dataContainer.form);
-                } else {
-                    task = postApi.add(dataContainer.form);
-                }
-                task.then((res) => {
+                const task = dataContainer.form.id
+                    ? postApi.update(dataContainer.form)
+                    : postApi.add(dataContainer.form);
+                task.then((res: any) => {
                     messageSuccess('操作成功');
                     // 更新html文件
                     postApi.updatePostInfoHtml(res?.data?.id).catch(() => {});
                     /** 跳转到列表页面 */
-                    let tag = findTag(route.path) || {};
-                    deleteTags({ paths: tag.path, layoutName: tag.layoutName });
+                    const config = findPermissionConfigByRoutePath(route.path);
+                    const tag = findTag(route.path, config?.layoutGroupSign) || ({} as any);
+                    deleteTags(tag.routePath, tag.layoutGroupSign);
                     router.push({
                         name: 'post-list',
                     });
                     //刷新事件
-                    let emitter = getMittInstance(`refreash-post-data`);
-                    emitter.emit(`refreash`);
+                    const emitter = getMittInstance(`refresh-post-data`);
+                    emitter.emit(`refresh`);
                 })
-                    .catch((res) => {
+                    .catch((res: any) => {
                         console.log(res);
-                        let msg = '未知错误';
-                        if (typeof res == 'object') {
-                            msg = res.msg;
-                        }
+                        const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                         messageError(msg);
                     })
                     .finally(() => {
@@ -136,19 +128,13 @@ export default defineComponent({
          * 数据验证
          * 外部可调用
          */
-        function validData(data) {
-            const failData = verifieData(data, {
-                name(value, option) {
-                    let label = `${option.key}:名称`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    return true;
-                },
-            });
-            return failData;
+        const validDataSchema = z.object({
+            name: z.string().min(1, '名称不能为空'),
+        });
+        function validData(data: any) {
+            const result = validDataSchema.safeParse(data);
+            if (result.success) return;
+            return result.error.issues[0].message;
         }
         return {
             dataContainer,
@@ -161,7 +147,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <definScrollbar :loading="dataContainer.loading">
+    <DefineScrollbar>
         <div class="page-container main-view">
             <div class="container">
                 <el-form
@@ -216,10 +202,10 @@ export default defineComponent({
                         </el-col>
                         <el-col :span="24" :xs="24">
                             <el-form-item label="内容" prop="content">
-                                <mdEditor
+                                <MdEditor
                                     :disabled="dataContainer.isShow"
                                     v-model:value="dataContainer.form.content"
-                                ></mdEditor>
+                                ></MdEditor>
                             </el-form-item>
                         </el-col>
                         <el-col :span="12" :xs="12">
@@ -262,7 +248,7 @@ export default defineComponent({
                 </el-button>
             </div>
         </div>
-    </definScrollbar>
+    </DefineScrollbar>
 </template>
 
 <style lang="scss" scoped>

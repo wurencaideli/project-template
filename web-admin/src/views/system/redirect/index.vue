@@ -2,7 +2,7 @@
     <div></div>
 </template>
 
-<script>
+<script lang="ts">
 import { useRoute, useRouter } from 'vue-router';
 
 export default {
@@ -10,9 +10,7 @@ export default {
     setup() {
         const route = useRoute();
         const router = useRouter();
-        const { params, query } = route;
-        const { path } = params;
-        router.replace(path);
+        router.replace(route.query.path as any);
         return {};
     },
 };

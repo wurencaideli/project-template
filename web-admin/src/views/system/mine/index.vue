@@ -1,19 +1,17 @@
-<script>
-/**
- * 个人信息展示
- */
+<script lang="ts">
 import { defineComponent, reactive, toRef } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { userDataStore } from '@/store/user.js';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import { userDataStore } from '~/store/user.ts';
 
 export default defineComponent({
     components: {
         SvgIcon,
     },
     setup() {
-        let userData = userDataStore();
-        const dataContainer = reactive({
-            userInfo: toRef(userData, 'userInfo'),
+        const userData = userDataStore();
+        const dataContainer: any = reactive({
+            userInfo: toRef(userData, 'info'),
         });
         return {
             dataContainer,
@@ -31,7 +29,7 @@ export default defineComponent({
                     <div class="left">
                         <SvgIcon
                             :style="'width:16px;height:16px;margin-right:10px;'"
-                            name="svg:user-fill.svg"
+                            name="svg:user.svg"
                         ></SvgIcon>
                         用户昵称
                     </div>
@@ -55,7 +53,7 @@ export default defineComponent({
                     <div class="left">
                         <SvgIcon
                             :style="'width:16px;height:16px;margin-right:10px;'"
-                            name="svg:collection-fill.svg"
+                            name="svg:star.svg"
                         ></SvgIcon>
                         自我介绍
                     </div>
@@ -77,7 +75,7 @@ export default defineComponent({
                 </div>
             </div>
             <router-link class="bt" to="/main/mine/info-update">
-                <SvgIcon :style="'width:16px;height:16px;'" name="svg:cog-fill.svg"></SvgIcon>
+                <SvgIcon :style="'width:16px;height:16px;'" name="svg:settings.svg"></SvgIcon>
             </router-link>
         </div>
     </div>

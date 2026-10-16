@@ -1,40 +1,39 @@
-<script>
-/**
- * 站内链接
- * 该页面的组件不实现功能，只管理iframe的链接，route同层级位置实现，防止路由切换不管缓存与否都刷新iframe的情况
- */
+<script lang="ts">
 import { defineComponent, reactive, onUnmounted, toRef } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { getNanoid } from '@/common/guid.js';
-import { deepCopyObj } from '@/common/other-tools.js';
+import { useRoute } from 'vue-router';
 import { Loading } from '@element-plus/icons-vue';
-import { userDataStore } from '@/store/user.js';
-import { findTag } from '@/action/tag-list-tools.js';
+
+import { getNanoid } from '~/common/guid.ts';
+import { deepCopyObj } from '~/common/common-tools.ts';
+import { userDataStore } from '~/store/user.ts';
+import { findTag } from '~/store/tag-manage.ts';
+import { findPermissionConfigByRoutePath } from '~/store/user-manage.ts';
 
 export default defineComponent({
     components: {
         Loading,
     },
     setup() {
-        let userData = userDataStore();
+        const userData = userDataStore();
         const route = useRoute();
-        const dataContainer = reactive({
-            iframe: {}, //当前管理的iframe
-            iframeList: toRef(userData, 'iframeList'), //当前已打开的iframe数组
+        const dataContainer: any = reactive({
+            iframe: {},
+            iframeList: toRef(userData, 'iframeList'),
         });
         /**
          * 数据初始化
          */
         function initData() {
-            let params = route.params;
+            const params = route.params;
             if (!params.sign) return;
-            let tag = findTag(route.path) || {};
-            let iframeList = deepCopyObj(dataContainer.iframeList);
+            const config = findPermissionConfigByRoutePath(route.path);
+            const tag = findTag(route.path, config?.layoutGroupSign) || ({} as any);
+            const iframeList = deepCopyObj(dataContainer.iframeList);
             dataContainer.iframe = {
                 path: route.path,
-                src: decodeURIComponent(params.sign),
-                key: getNanoid(), //唯一标识，防止刷新时vue重新利用
-                layoutName: tag.layoutName,
+                src: (route.query.src as string) || config?.routeParams || '',
+                key: getNanoid(),
+                layoutGroupSign: tag.layoutGroupSign,
             };
             iframeList.push(dataContainer.iframe);
             userData.setIframeList(iframeList);
@@ -42,8 +41,8 @@ export default defineComponent({
         initData();
         /** 组件销毁时删除该iframe */
         onUnmounted(() => {
-            let iframeList = deepCopyObj(userData.iframeList);
-            let index = iframeList.findIndex((item) => {
+            const iframeList = deepCopyObj(userData.iframeList);
+            const index = iframeList.findIndex((item: any) => {
                 return item.key == dataContainer.iframe.key;
             });
             if (index == -1) return;

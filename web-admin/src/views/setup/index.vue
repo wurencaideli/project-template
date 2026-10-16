@@ -1,10 +1,11 @@
-<script>
-import { defineComponent, ref, reactive } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { messageError, messageSuccess, confirm } from '@/action/message-prompt.js';
-import publicApi from '@/http/public.js';
-import definScrollbar from '@/components/defin-scrollbar.vue';
+<script lang="ts">
+import { defineComponent, reactive } from 'vue';
+import { useRoute } from 'vue-router';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import { messageError, messageSuccess, confirm } from '~/action/message-prompt.ts';
+import publicApi from '~/http/public.ts';
+import DefineScrollbar from '~/components/define-scrollbar.vue';
 
 export default defineComponent({
     components: {
@@ -12,7 +13,7 @@ export default defineComponent({
     },
     setup() {
         const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             isShow: false,
             loading: false,
             loading_1: false,
@@ -27,10 +28,10 @@ export default defineComponent({
          * 数据初始化
          */
         function initData() {
-            let params = route.params;
+            const params = route.params;
             if (!params.sign) return;
-            const querys = route.query || {};
-            dataContainer.isShow = querys.isShow === 'true';
+            const query = route.query || {};
+            dataContainer.isShow = query.isShow === 'true';
         }
         initData();
         /** 更新rss文件 */
@@ -43,11 +44,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -66,11 +64,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -88,11 +83,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -110,11 +102,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -132,11 +121,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -154,11 +140,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -176,11 +159,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -198,11 +178,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -220,11 +197,8 @@ export default defineComponent({
                         .then(() => {
                             messageSuccess('更新成功');
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                         })
                         .finally(() => {
@@ -251,19 +225,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <definScrollbar
-        :loading="
-            dataContainer.loading ||
-            dataContainer.loading_1 ||
-            dataContainer.loading_2 ||
-            dataContainer.loading_3 ||
-            dataContainer.loading_4 ||
-            dataContainer.loading_5 ||
-            dataContainer.loading_6 ||
-            dataContainer.loading_7 ||
-            dataContainer.loading_8
-        "
-    >
+    <DefineScrollbar>
         <div class="page-container main-view">
             <div class="container">
                 <div class="title">网站部分设置</div>
@@ -352,9 +314,10 @@ export default defineComponent({
                         确认清除冗余html文件
                     </el-button>
                 </div>
+                <div style="height: 1000px">测试</div>
             </div>
         </div>
-    </definScrollbar>
+    </DefineScrollbar>
 </template>
 
 <style lang="scss" scoped>

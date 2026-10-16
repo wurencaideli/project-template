@@ -1,27 +1,24 @@
-<script>
-/**
- * 页面例子
- * 显示所有icon
- */
+<script lang="ts">
 import { defineComponent, reactive } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { iconList } from '@/components/svg-icon/common.js';
-import DefinScrollbar from '@/components/defin-scrollbar.vue';
-import { copyValue } from '@/common/other-tools.js';
-import { messageSuccess } from '@/action/message-prompt.js';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import { iconList } from '~/generated/icon-list.ts';
+import DefineScrollbar from '~/components/define-scrollbar.vue';
+import { copyValue } from '~/common/common-tools.ts';
+import { messageSuccess } from '~/action/message-prompt.ts';
 
 export default defineComponent({
     components: {
         SvgIcon,
-        DefinScrollbar,
+        DefineScrollbar,
     },
     setup() {
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             iconList: iconList,
         });
         /** copy事件 */
-        function onClick(item) {
-            let msg = `<SvgIcon
+        function onClick(item: any) {
+            const msg = `<SvgIcon
 :style="'width:23px;height:23px;'"
 name="${item.name}"></SvgIcon>`;
             copyValue(msg);
@@ -36,7 +33,7 @@ name="${item.name}"></SvgIcon>`;
 </script>
 
 <template>
-    <DefinScrollbar height="100%" :showUpBt="true">
+    <DefineScrollbar height="100%" :showUpBt="true">
         <div class="page-container icon-list-view">
             <div class="container">
                 <div
@@ -52,7 +49,7 @@ name="${item.name}"></SvgIcon>`;
                 </div>
             </div>
         </div>
-    </DefinScrollbar>
+    </DefineScrollbar>
 </template>
 
 <style lang="scss" scoped>

@@ -1,5 +1,5 @@
-<script>
-import { defineComponent, ref, reactive, toRef, computed } from 'vue';
+<script lang="ts">
+import { defineComponent, reactive, computed } from 'vue';
 import { MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
 
@@ -19,7 +19,7 @@ export default defineComponent({
     },
     emits: ['update:value'],
     setup(props, { emit }) {
-        const dataContainer = reactive({});
+        const dataContainer: any = reactive({});
         const value = computed({
             get() {
                 return props.value;

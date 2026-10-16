@@ -1,20 +1,23 @@
-<script>
+<script lang="ts">
 import { defineComponent, reactive, toRef } from 'vue';
 
 export default defineComponent({
     name: 'UserAvatar',
     components: {},
     props: {
-        userInfo: {
-            type: Object,
-            default: () => {
-                return {};
-            },
+        src: {
+            type: String,
+            default: '',
+        },
+        name: {
+            type: String,
+            default: '',
         },
     },
     setup(props) {
-        const dataContainer = reactive({
-            userInfo: toRef(props, 'userInfo'),
+        const dataContainer: any = reactive({
+            src: toRef(props, 'src'),
+            name: toRef(props, 'name'),
         });
         return {
             dataContainer,
@@ -24,10 +27,10 @@ export default defineComponent({
 </script>
 
 <template>
-    <el-image class="user-avatar" :src="dataContainer.userInfo.avatar || ''" fit="cover">
+    <el-image class="user-avatar" :src="dataContainer.src" fit="cover">
         <template #error>
             <div class="name">
-                {{ (dataContainer.userInfo.name || '').slice(0, 1) }}
+                {{ (dataContainer.name || '').slice(0, 1) }}
             </div>
         </template>
     </el-image>

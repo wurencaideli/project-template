@@ -1,71 +1,80 @@
-<script>
-import { defineComponent, onBeforeUnmount, reactive, ref } from 'vue';
-import { copyValue } from '@/common/other-tools.js';
-import DictTags from '@/components/dict-tags.vue';
-import { debounceFn } from '@/common/debounce-and-throttle.js';
-import { messageSuccess, confirm } from '@/action/message-prompt.js';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { hasPermi } from '@/action/power-tools.js';
+<script lang="ts">
+import { defineComponent, reactive, ref } from 'vue';
 import { saveAs } from 'file-saver';
-import friendlyLinkApi from '@/http/friendly-link.js';
-import { messageError } from '@/action/message-prompt.js';
-import editDataDialog from './components/edit-data-dialog.vue';
-import { timestampToStr } from '@/common/date-tools.js';
+
+import { copyValue } from '~/common/common-tools.ts';
+import DictTags from '~/components/dict-tags.vue';
+import { throttleFn } from '~/common/debounce-and-throttle.ts';
+import { messageSuccess, confirm } from '~/action/message-prompt.ts';
+import SvgIcon from '~/components/svg-icon.vue';
+import friendlyLinkApi from '~/http/friendly-link.ts';
+import { messageError } from '~/action/message-prompt.ts';
+import EditDataDialog from './components/edit-data-dialog.vue';
+import { timestampToStr } from '~/common/date-tools.ts';
 
 export default defineComponent({
     components: {
         DictTags,
         SvgIcon,
-        editDataDialog,
+        EditDataDialog,
     },
     setup() {
-        const QueryFormRef = ref(null);
-        const editDataDialogRef = ref(null);
-        const dataContainer = reactive({
-            loading: false,
+        const QueryFormRef = ref<any>(null);
+        const editDataDialogRef = ref<any>(null);
+        const dataContainer: any = reactive({
             form: {},
             params: {
                 page: 1,
                 size: 15,
             },
-            config: {
+            getDataStatus: {
                 total: 0,
+                list: [],
+                loading: false,
+                currentRows: [],
             },
-            list: [],
-            currentRows: [],
+            deleteDataStatus: {
+                loading: false,
+            },
+            updateHtmlStatus: {
+                loading: false,
+            },
         });
         /** 获取数据列表 */
-        const getDataList = debounceFn(function () {
-            if (dataContainer.loading) return;
-            dataContainer.loading = true;
+        const getDataList = throttleFn(function () {
+            const getDataStatus = {
+                total: 0,
+                list: [],
+                loading: true,
+                currentRows: [],
+            };
+            dataContainer.getDataStatus = getDataStatus;
             const params = Object.assign({}, dataContainer.form, dataContainer.params);
             friendlyLinkApi
                 .list(params)
-                .then((res) => {
+                .then((res: any) => {
                     const data = res.data || {};
-                    dataContainer.list = data.list || [];
-                    dataContainer.config.total = data.total;
-                    dataContainer.currentRows = [];
+                    getDataStatus.list = data.list || [];
+                    getDataStatus.total = data.total;
+                    getDataStatus.currentRows = [];
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 })
                 .finally(() => {
-                    dataContainer.loading = false;
+                    getDataStatus.loading = false;
+                    dataContainer.getDataStatus = { ...dataContainer.getDataStatus };
                 });
         }, 300);
         getDataList();
         /** 双击单元格，复制单元格内容 */
-        function handleCopyVale(_, __, ___, event) {
+        function handleCopyVale(_: any, __: any, ___: any, event: any) {
             copyValue(event.target.innerText);
             messageSuccess('复制成功，内容为：' + event.target.innerText);
         }
         /** 排序触发事件 */
-        function handleSortChange(column, prop, order) {
+        function handleSortChange(column: any) {
             dataContainer.form.orderByColumn = column.prop;
             dataContainer.form.isAsc = column.order;
             getDataList();
@@ -85,13 +94,13 @@ export default defineComponent({
         }
         /** 导出数据 */
         function handleExport() {
-            let str = '保存字符串的例子！！';
-            let strData = new Blob([str], { type: 'text/plain;charset=utf-8' });
+            const str = '保存字符串的例子！！';
+            const strData = new Blob([str], { type: 'text/plain;charset=utf-8' });
             saveAs(strData, '测试文件下载.txt');
             messageSuccess('导出成功！');
         }
         /** 新增按钮操作 */
-        function handleAdd(row) {
+        function handleAdd(row: any) {
             if (!editDataDialogRef.value) return;
             editDataDialogRef.value
                 .initData(
@@ -109,7 +118,7 @@ export default defineComponent({
                 .catch(() => {});
         }
         /** 详情按钮操作 */
-        function handleDetails(row, querys) {
+        function handleDetails(row: any, query: any) {
             if (!editDataDialogRef.value) return;
             editDataDialogRef.value
                 .initData(
@@ -128,7 +137,7 @@ export default defineComponent({
                 .catch(() => {});
         }
         /** 编辑按钮操作 */
-        function handleEdit(row, querys) {
+        function handleEdit(row: any, query: any) {
             if (!editDataDialogRef.value) return;
             editDataDialogRef.value
                 .initData(
@@ -146,28 +155,29 @@ export default defineComponent({
                 .catch(() => {});
         }
         /** 删除 */
-        function handleDelete(rows) {
+        function handleDelete(rows: any) {
             confirm('确认删除所选数据？', '提示！')
                 .then(async () => {
-                    dataContainer.loading = true;
-                    let state = await friendlyLinkApi
+                    const deleteDataStatus = {
+                        loading: true,
+                    };
+                    dataContainer.deleteDataStatus = deleteDataStatus;
+                    const state = await friendlyLinkApi
                         .delete({
-                            id: rows.map((item) => item.id).join(','),
+                            id: rows.map((item: any) => item.id).join(','),
                         })
                         .then(() => {
                             messageSuccess('删除成功');
                             return true;
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                             return false;
                         })
                         .finally(() => {
-                            dataContainer.loading = false;
+                            deleteDataStatus.loading = false;
+                            dataContainer.deleteDataStatus = { ...dataContainer.deleteDataStatus };
                         });
                     if (state) {
                         getDataList();
@@ -178,23 +188,24 @@ export default defineComponent({
         function updateHtml() {
             confirm('确认更新HTML文件？', '提示！')
                 .then(async () => {
-                    dataContainer.loading = true;
+                    const updateHtmlStatus = {
+                        loading: true,
+                    };
+                    dataContainer.updateHtmlStatus = updateHtmlStatus;
                     await friendlyLinkApi
                         .updateHtml()
                         .then(() => {
                             messageSuccess('更新成功');
                             return true;
                         })
-                        .catch((res) => {
-                            let msg = '未知错误';
-                            if (typeof res == 'object') {
-                                msg = res.msg;
-                            }
+                        .catch((res: any) => {
+                            const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                             messageError(msg);
                             return false;
                         })
                         .finally(() => {
-                            dataContainer.loading = false;
+                            updateHtmlStatus.loading = false;
+                            dataContainer.updateHtmlStatus = { ...dataContainer.updateHtmlStatus };
                         });
                 })
                 .catch(() => {});
@@ -213,7 +224,6 @@ export default defineComponent({
             handleDetails,
             handleEdit,
             handleDelete,
-            hasPermi,
             timestampToStr,
             updateHtml,
         };
@@ -259,14 +269,14 @@ export default defineComponent({
                                 <el-button type="primary" @click="handleQuery">
                                     <SvgIcon
                                         :style="'width:15px;height:15px;margin-right:5px;'"
-                                        name="svg:search-bt.svg"
+                                        name="svg:search.svg"
                                     ></SvgIcon>
                                     查询
                                 </el-button>
                                 <el-button @click="resetQuery">
                                     <SvgIcon
                                         :style="'width:15px;height:15px;margin-right:5px;'"
-                                        name="svg:redo.svg"
+                                        name="svg:rotate-cw.svg"
                                     ></SvgIcon>
                                     重置
                                 </el-button>
@@ -280,7 +290,6 @@ export default defineComponent({
             <div class="top-container">
                 <div class="left">
                     <el-button
-                        v-if="hasPermi(['yx:apply:apply'])"
                         type="primary"
                         @click="handleAdd"
                     >
@@ -291,22 +300,22 @@ export default defineComponent({
                     <el-button
                         plain
                         type="danger"
-                        v-if="dataContainer.currentRows.length > 0"
-                        @click="handleDelete(dataContainer.currentRows)"
+                        v-if="dataContainer.getDataStatus.currentRows.length > 0"
+                        @click="handleDelete(dataContainer.getDataStatus.currentRows)"
                     >
-                        批量删除：{{ dataContainer.currentRows.length }}
+                        批量删除：{{ dataContainer.getDataStatus.currentRows.length }}
                     </el-button>
                 </div>
                 <div class="right">
                     <el-button circle @click="resetQuery">
-                        <SvgIcon :style="'width:15px;height:15px;'" name="svg:redo.svg"></SvgIcon>
+                        <SvgIcon :style="'width:15px;height:15px;'" name="svg:rotate-cw.svg"></SvgIcon>
                     </el-button>
                 </div>
             </div>
             <div class="table-container">
                 <el-table
-                    v-loading="dataContainer.loading"
-                    :data="dataContainer.list"
+                    v-loading="dataContainer.getDataStatus.loading || dataContainer.deleteDataStatus.loading || dataContainer.updateHtmlStatus.loading"
+                    :data="dataContainer.getDataStatus.list"
                     border
                     @cell-dblclick="handleCopyVale"
                     @sort-change="handleSortChange"
@@ -449,7 +458,7 @@ export default defineComponent({
             <div class="pagination-container">
                 <el-pagination
                     v-show="true"
-                    :total="dataContainer.config.total"
+                    :total="dataContainer.getDataStatus.total"
                     :background="true"
                     :current-page="dataContainer.params.page"
                     :page-size="dataContainer.params.size"
@@ -471,7 +480,7 @@ export default defineComponent({
                 />
             </div>
         </div>
-        <editDataDialog ref="editDataDialogRef"></editDataDialog>
+        <EditDataDialog ref="editDataDialogRef"></EditDataDialog>
     </div>
 </template>
 

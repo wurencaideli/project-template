@@ -23,9 +23,8 @@
     </div>
 </template>
 
-<script>
-/** 根据options 展示value为tag形式 */
-import { defineComponent, ref, reactive, toRef, computed } from 'vue';
+<script lang="ts">
+import { defineComponent, reactive, toRef, computed } from 'vue';
 
 export default defineComponent({
     name: 'DictTags',
@@ -50,7 +49,7 @@ export default defineComponent({
         },
     },
     setup(props) {
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             options: toRef(props, 'options'),
             value: toRef(props, 'value'),
             valueKey: toRef(props, 'valueKey'),
@@ -58,12 +57,12 @@ export default defineComponent({
         });
         const values = computed(() => {
             if (Array.isArray(dataContainer.value)) {
-                return dataContainer.options.filter((item) => {
+                return dataContainer.options.filter((item: any) => {
                     return dataContainer.value.includes(item[dataContainer.valueKey]);
                 });
             } else {
                 const data = dataContainer.options.find(
-                    (item) => item[dataContainer.valueKey] == dataContainer.value,
+                    (item: any) => item[dataContainer.valueKey] == dataContainer.value,
                 );
                 return data
                     ? [data]

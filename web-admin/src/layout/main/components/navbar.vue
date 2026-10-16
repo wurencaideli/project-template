@@ -1,40 +1,53 @@
-<script>
-/**
- * navbar组件
- */
-import { ref, defineComponent, reactive, toRef } from 'vue';
+<script lang="ts">
+import { defineComponent, ref, reactive, toRef, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import userAvatar from '@/components/user-avatar.vue';
-import { userDataStore } from '@/store/user.js';
-import { messageSuccess, messageError, confirm } from '@/action/message-prompt.js';
-import definDropdown from '@/components/defin-dropdown.vue';
-import userApi from '@/http/user.js';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import UserAvatar from '~/components/user-avatar.vue';
+import { userDataStore } from '~/store/user.ts';
+import { clearAllTags } from '~/store/tag-manage.ts';
+import { messageSuccess, messageError, confirm } from '~/action/message-prompt.ts';
+import { createDropdownMenu } from '~/action/dropdown-menu-modal-service.ts';
+import DropdownMenuModal from '~/components/dropdown-menu-modal.vue';
+import userApi from '~/http/user.ts';
 
 export default defineComponent({
     name: 'Navbar',
     components: {
         SvgIcon,
-        userAvatar,
-        definDropdown,
+        UserAvatar,
     },
-    props: {},
-    setup(props, { emit }) {
-        let userData = userDataStore();
+    props: {
+        /** 用户信息 */
+        userInfo: {
+            type: Object,
+            default: () => {
+                return {};
+            },
+        },
+    },
+    setup(props) {
+        const userData = userDataStore();
         const router = useRouter();
-        const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             loading: false,
-            userInfo: toRef(userData, 'userInfo'),
-            show: false,
+            userInfo: toRef(props, 'userInfo'),
         });
+        const otherDataContainer: any = {
+            menu: null,
+            menuTarget: null,
+        };
+        const nickNameChars = computed(() => {
+            return (dataContainer.userInfo.nickname || '').split('');
+        });
+        const MenuBtRef = ref<any>(null);
         /** 跳转页面 */
-        function toPath(path) {
+        function toPath(path: any) {
             router.push(path);
         }
         /** 退出登录 */
         async function handleLogout() {
-            let state = await confirm('退出登录？', '确定退出？', {
+            const state = await confirm('退出登录？', '确定退出？', {
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
                 type: 'warning',
@@ -51,18 +64,17 @@ export default defineComponent({
                 .logout()
                 .then(() => {
                     userData.setUserInfo({});
+                    userData.setToken('');
+                    clearAllTags();
                     router.push('/login');
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
-                    messageError('登录失败：' + msg);
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
+                    messageError('退出失败：' + msg);
                 });
         }
         async function handleLogoutAll() {
-            let state = await confirm('退出登录(所有设备)？', '确定退出？', {
+            const state = await confirm('退出登录(所有设备)？', '确定退出？', {
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
                 type: 'warning',
@@ -79,21 +91,98 @@ export default defineComponent({
                 .logout({ exitAll: true })
                 .then(() => {
                     userData.setUserInfo({});
+                    userData.setToken('');
+                    clearAllTags();
                     router.push('/login');
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 });
         }
+        function closeMenu() {
+            const menu = otherDataContainer.menu;
+            if (menu) menu.show = false;
+        }
+        function handleDocPointerdown(e: any) {
+            const menu = otherDataContainer.menu;
+            if (!menu || !menu.show) return;
+            const el = e.target as HTMLElement;
+            if (
+                menu.dropdownMenuContainerEl.contains(el) ||
+                otherDataContainer.menuTarget?.contains(el)
+            )
+                return;
+            closeMenu();
+        }
+        /** 点击齿轮图标弹出下拉菜单，实例只创建一次，之后通过 show 开关 */
+        function handleShowMenu() {
+            const menu = otherDataContainer.menu;
+            if (menu) {
+                menu.show = !menu.show;
+                return;
+            }
+            const target = MenuBtRef.value.$el;
+            otherDataContainer.menuTarget = target;
+            otherDataContainer.menu = createDropdownMenu({
+                target,
+                show: true,
+                displayAreaLimit: 'vertical',
+                offset: 5,
+                component: DropdownMenuModal,
+                props: {
+                    list: [
+                        {
+                            label: '修改用户基本信息',
+                            iconName: 'svg:user.svg',
+                            onClick: () => {
+                                closeMenu();
+                                toPath('/main/mine/info-update');
+                            },
+                        },
+                        {
+                            label: '修改用户密码',
+                            iconName: 'svg:key-round.svg',
+                            onClick: () => {
+                                closeMenu();
+                                toPath('/main/mine/info-password');
+                            },
+                        },
+                        {
+                            label: '退出登录',
+                            iconName: 'svg:power.svg',
+                            logout: true,
+                            onClick: () => {
+                                closeMenu();
+                                handleLogout();
+                            },
+                        },
+                        {
+                            label: '退出登录(所有设备)',
+                            iconName: 'svg:power.svg',
+                            logout: true,
+                            onClick: () => {
+                                closeMenu();
+                                handleLogoutAll();
+                            },
+                        },
+                    ],
+                },
+            });
+        }
+        onMounted(() => document.addEventListener('pointerdown', handleDocPointerdown, true));
+        onUnmounted(() => {
+            document.removeEventListener('pointerdown', handleDocPointerdown, true);
+            otherDataContainer.menu?.destroy();
+        });
         return {
             dataContainer,
+            nickNameChars,
+            MenuBtRef,
             toPath,
             handleLogout,
             handleLogoutAll,
+            handleShowMenu,
         };
     },
 });
@@ -104,76 +193,35 @@ export default defineComponent({
         <div class="top">
             <div class="user-container">
                 <div @click="toPath('/main/mine/info')" class="user">
-                    <userAvatar :userInfo="dataContainer.userInfo"></userAvatar>
+                    <UserAvatar
+                        :src="dataContainer.userInfo.avatar"
+                        :name="dataContainer.userInfo.nickname || dataContainer.userInfo.name"
+                    ></UserAvatar>
                 </div>
                 <div class="name">
                     <SvgIcon
                         :style="'width: 20px;min-width:20px;height: 20px;'"
-                        :name="'svg:user-fill.svg'"
+                        :name="'svg:user.svg'"
                     ></SvgIcon>
-                    <span>
-                        {{ dataContainer.userInfo.nickname }}
+                    <span v-for="(char, index) in nickNameChars" :key="index">
+                        {{ char }}
                     </span>
                 </div>
             </div>
-            <definDropdown
-                :show="dataContainer.show"
-                :ifLeftClick="true"
-                :targetQuery="'.target'"
-                @onOtherClick="dataContainer.show = false"
-                @onClick="
-                    () => {
-                        dataContainer.show = !dataContainer.show;
-                    }
-                "
-                position="outside,right,start"
-            >
-                <SvgIcon
-                    :style="'width: 22px;min-width:22px;height: 22px;cursor: pointer;'"
-                    :name="'svg:cog-fill.svg'"
-                    class="target"
-                ></SvgIcon>
-                <template v-slot:dropdown>
-                    <div class="bt-list-container">
-                        <div @click="toPath('/main/mine/info-update')" class="item">
-                            <SvgIcon
-                                :style="'width: 17px;min-width:17px;height: 17px;'"
-                                :name="'svg:user-fill.svg'"
-                            ></SvgIcon>
-                            修改用户基本信息
-                        </div>
-                        <div @click="toPath('/main/mine/info-password')" class="item">
-                            <SvgIcon
-                                :style="'width: 17px;min-width:17px;height: 17px;'"
-                                :name="'svg:cat-code.svg'"
-                            ></SvgIcon>
-                            修改用户密码
-                        </div>
-                        <div @click="handleLogout" class="item logout">
-                            <SvgIcon
-                                :style="'width: 17px;min-width:17px;height: 17px;'"
-                                :name="'svg:poweroff.svg'"
-                            ></SvgIcon>
-                            退出登录
-                        </div>
-                        <div @click="handleLogoutAll" class="item logout">
-                            <SvgIcon
-                                :style="'width: 17px;min-width:17px;height: 17px;'"
-                                :name="'svg:poweroff.svg'"
-                            ></SvgIcon>
-                            退出登录(所有设备)
-                        </div>
-                    </div>
-                </template>
-            </definDropdown>
+            <SvgIcon
+                ref="MenuBtRef"
+                :style="'width: 22px;min-width:22px;height: 22px;cursor: pointer;'"
+                :name="'svg:settings.svg'"
+                @click="handleShowMenu"
+            ></SvgIcon>
             <a href="https://gitee.com/wuzhanggui/dumogu-admin" target="_blank" class="bt">
                 <SvgIcon :style="'width:22px;height:22px;'" name="img:gitee.svg"></SvgIcon>
             </a>
             <a href="https://github.com/wurencaideli/dumogu-admin" target="_blank" class="bt">
-                <SvgIcon :style="'width:22px;height:22px;'" name="svg:git-hub.svg"></SvgIcon>
+                <SvgIcon :style="'width:22px;height:22px;'" name="img:github.svg"></SvgIcon>
             </a>
             <a href="https://txc.qq.com/products/613546" target="_blank" class="bt">
-                <SvgIcon :style="'width:22px;height:22px;'" name="svg:fankui.svg"></SvgIcon>
+                <SvgIcon :style="'width:22px;height:22px;'" name="svg:megaphone.svg"></SvgIcon>
                 <div class="number">
                     <div class="container">12</div>
                 </div>
@@ -182,10 +230,9 @@ export default defineComponent({
         <div class="bottom">
             <div class="index" @click="handleLogout">
                 <SvgIcon
-                    :style="'width: 17px;min-width:17px;height: 17px;margin-right:5px;color: #f92b4c;'"
-                    :name="'svg:poweroff.svg'"
+                    :style="'width: 20px;min-width:20px;height: 20px;margin-right:0px;color: #f92b4c;'"
+                    :name="'svg:power.svg'"
                 ></SvgIcon>
-                退出
             </div>
         </div>
     </div>
@@ -193,6 +240,7 @@ export default defineComponent({
 
 <style scoped lang="scss">
 .navbar-cp {
+    width: fit-content;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -207,90 +255,36 @@ export default defineComponent({
         flex-direction: column;
         align-items: center;
         color: var(--text-color);
-        > * {
-            margin-bottom: 30px;
-        }
+        gap: 30px;
         > .user-container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 30px;
             > .user {
-                height: 50px;
-                width: 50px;
+                height: 40px;
+                width: 40px;
                 border-radius: 50%;
-                border: 2px solid var(--text-color);
+                border: 1px solid var(--text-color);
                 box-sizing: border-box;
                 background-color: #1f364d;
                 cursor: pointer;
                 box-shadow: var(--bt-box-shadow-1);
-                margin-bottom: 15px;
-                position: relative;
-                > .role {
-                    position: absolute;
-                    right: -15px;
-                    bottom: -15px;
-                    transform: scale(0.5);
-                    font-size: 12px;
-                    background-color: rgb(0 90 180);
-                    color: rgb(215, 215, 215);
-                    border: 1px solid;
-                    border-color: rgb(0 127 255);
-                    border-radius: 999px;
-                    padding: 5px 10px;
-                    width: max-content;
-                    box-shadow: var(--bt-box-shadow-1);
-                }
             }
             > .name {
                 font-size: 13px;
                 font-weight: bold;
                 width: fit-content;
-                // color: rgb(215, 215, 215);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                > * {
-                    margin-bottom: 5px;
-                }
+                gap: 5px;
                 span {
-                    writing-mode: vertical-rl;
-                    margin: 0;
+                    line-height: 1;
                     font-size: 15px;
-                    letter-spacing: 1.5px;
                     font-weight: bold;
                     text-shadow: 1px 1px 0px #000;
                 }
-            }
-        }
-        > .search {
-            width: fit-content;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        :deep(.defin-drop) {
-            z-index: 999;
-            .bt-list-container {
-                opacity: 1 !important;
-            }
-        }
-        > .login {
-            width: calc(100% - 10px);
-            padding: 0 5px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            font-weight: bold;
-            box-sizing: content-box;
-            border: 2px solid #2c4967;
-            color: #9cb3c9;
-            border-radius: 999px;
-            box-shadow: var(--bt-box-shadow-1);
-            > * {
-                font-size: 15px;
-                margin-left: 5px;
             }
         }
         > .bt {

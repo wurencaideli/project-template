@@ -1,86 +1,90 @@
-<script>
-/**
- * 操作 layout
- * 负责相应事件的统一分发处理
- */
+<script lang="ts">
 import { defineComponent, reactive, toRef, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+
 import Navbar from './components/navbar.vue';
 import Menu from './components/menu.vue';
 import TagList from './components/tag-list.vue';
-import { useRouter, useRoute } from 'vue-router';
-import { userDataStore } from '@/store/user.js';
-import img_1 from '@/assets/logo.png';
-import keepAliveRouter from '@/components/keep-alive-router.vue';
-import DefinScrollbar from '@/components/defin-scrollbar.vue';
-import searchContainer from './components/search-container.vue';
-import { publicDataStore } from '@/store/public.js';
+
+import { userDataStore } from '~/store/user.ts';
+import { tagDataStore } from '~/store/tag.ts';
+import { setTagList } from '~/store/tag-manage.ts';
+import { findPermissionConfigByRoutePath } from '~/store/user-manage.ts';
+import img_1 from '~/assets/logo.png';
+import KeepAliveRouter from '~/components/keep-alive-router.vue';
+import DefineScrollbar from '~/components/define-scrollbar.vue';
 
 export default defineComponent({
     name: 'MainLayout',
     components: {
         Menu,
         TagList,
-        keepAliveRouter,
+        KeepAliveRouter,
         Navbar,
-        DefinScrollbar,
-        searchContainer,
+        DefineScrollbar,
     },
     props: {},
     setup() {
-        let publicData = publicDataStore();
-        let userData = userDataStore();
+        const userData = userDataStore();
+        const tagData = tagDataStore();
         const router = useRouter();
         const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             name: import.meta.env.VITE_APP_name,
-            fullScreen: toRef(publicData, 'fullScreen'),
             img: {
                 img_1,
             },
-            layoutName: 'main', // layout分组名
-            userInfo: toRef(userData, 'userInfo'),
-            tagsMap: toRef(userData, 'tagsMap'), // 根据用户目录生成的页面的标签MAP
-            userMenuList: toRef(userData, 'userMenuList'), // 用户自定义的目录信息，用作左侧目录展示
-            iframeList: toRef(userData, 'iframeList'), //当前已打开的iframe数组
+            layoutGroupSign: computed(
+                () => findPermissionConfigByRoutePath(route.path)?.layoutGroupSign || '',
+            ),
+            userInfo: toRef(userData, 'info'),
+            tagList: computed(() => tagData.tagMap[dataContainer.layoutGroupSign]?.tagList || []),
+            menuTree: toRef(userData, 'menuTree'),
+            iframeList: toRef(userData, 'iframeList'),
         });
         /**
          * iframe list map
-         * 记录已有的iframe个数的path map 方便查找
          */
         const iframePathMap = computed(() => {
             return dataContainer.iframeList
-                .filter((item) => {
-                    return item.layoutName == dataContainer.layoutName;
+                .filter((item: any) => {
+                    return item.layoutGroupSign == dataContainer.layoutGroupSign;
                 })
-                .reduce((c, i) => {
+                .reduce((c: any, i: any) => {
                     c[i.path] = i;
                     return c;
-                }, {});
+                }, {} as any);
         });
         /**
          * 需要缓存的页面列表
-         * 根据标签列表来的，需要改的话只需要处理标签列表
          */
         const cacheTagList = computed(() => {
-            let tagList = dataContainer.tagsMap[dataContainer.layoutName || ''] || [];
-            return tagList
-                .filter((item) => {
-                    return item.isCache;
+            return dataContainer.tagList
+                .filter((item: any) => {
+                    return (
+                        item.layoutGroupSign == dataContainer.layoutGroupSign &&
+                        item.isCache &&
+                        item.hasTag
+                    );
                 })
-                .map((item) => {
-                    /** 缓存组件是根据path命名来缓存的 */
-                    return item.path;
+                .map((item: any) => {
+                    return item.routePath;
                 });
         });
-        function toPath(path) {
+        function toPath(path: any) {
             router.push(path);
+        }
+        /** 标签列表修改（拖拽排序），由外部写回 */
+        function handleTagListChange(value: any) {
+            setTagList(dataContainer.layoutGroupSign, value);
         }
         return {
             dataContainer,
-            routeIncetance: route,
+            routeInstance: route,
             toPath,
             cacheTagList,
             iframePathMap,
+            handleTagListChange,
         };
     },
 });
@@ -90,11 +94,10 @@ export default defineComponent({
     <div
         :class="{
             'main-layout': true,
-            'full-screen': dataContainer.fullScreen,
         }"
     >
         <div class="left">
-            <Navbar></Navbar>
+            <Navbar :userInfo="dataContainer.userInfo"></Navbar>
         </div>
         <div class="centre">
             <div class="logo" @click="toPath({ path: '/' })">
@@ -102,41 +105,40 @@ export default defineComponent({
                 <div class="name">{{ dataContainer.name }}</div>
             </div>
             <div class="main-centre-content">
-                <DefinScrollbar :loading="dataContainer.loading" height="100%" :showUpBt="false">
+                <DefineScrollbar height="100%" :showUpBt="false">
                     <div class="main-centre-content-container">
-                        <div class="search-container">
-                            <searchContainer></searchContainer>
-                        </div>
-                        <Menu :dataList="dataContainer.userMenuList"></Menu>
+                        <Menu :menuTree="dataContainer.menuTree"></Menu>
                     </div>
-                </DefinScrollbar>
+                </DefineScrollbar>
             </div>
         </div>
         <div class="right">
             <div class="top">
                 <TagList
-                    :activePath="routeIncetance.path"
-                    :layoutName="dataContainer.layoutName"
+                    :activePath="routeInstance.path"
+                    :layoutGroupSign="dataContainer.layoutGroupSign"
+                    :tagList="dataContainer.tagList"
+                    @onChange="handleTagListChange"
                 ></TagList>
             </div>
             <div class="view-container">
-                <keepAliveRouter :cacheList="cacheTagList"></keepAliveRouter>
+                <KeepAliveRouter :cacheList="cacheTagList"></KeepAliveRouter>
                 <!-- 当前打开的iframe列表页，防止重新刷新 -->
                 <div
                     :style="{
-                        'z-index': iframePathMap[routeIncetance.path] ? 1 : -1,
-                        opacity: iframePathMap[routeIncetance.path] ? 1 : 0,
+                        'z-index': iframePathMap[routeInstance.path] ? 1 : -1,
+                        opacity: iframePathMap[routeInstance.path] ? 1 : 0,
                     }"
                     class="iframe-view"
                 >
                     <iframe
-                        v-for="item in dataContainer.iframeList.filter((item) => {
-                            return item.layoutName == dataContainer.layoutName;
+                        v-for="item in dataContainer.iframeList.filter((item: any) => {
+                            return item.layoutGroupSign == dataContainer.layoutGroupSign;
                         })"
                         :key="item.key"
                         :style="{
-                            'z-index': item.path == routeIncetance.path ? 1 : -1,
-                            opacity: item.path == routeIncetance.path ? 1 : 0,
+                            'z-index': item.path == routeInstance.path ? 1 : -1,
+                            opacity: item.path == routeInstance.path ? 1 : 0,
                         }"
                         :src="item.src"
                         width="100%"
@@ -161,19 +163,13 @@ export default defineComponent({
     flex-direction: row;
     position: relative;
     z-index: 9;
-    &.full-screen {
-        > .left,
-        > .centre {
-            width: 0;
-            opacity: 0;
-            pointer-events: none;
-        }
-    }
     > .left {
         height: 100%;
         background-color: var(--bg-color);
-        transition: width 0.2s, opacity 0.2s;
-        width: 70px;
+        transition:
+            width 0.2s,
+            opacity 0.2s;
+        width: fit-content;
     }
     > .centre {
         height: 100%;
@@ -181,7 +177,9 @@ export default defineComponent({
         background-color: var(--bg-color-2);
         display: flex;
         flex-direction: column;
-        transition: width 0.2s, opacity 0.2s;
+        transition:
+            width 0.2s,
+            opacity 0.2s;
         > .logo {
             height: var(--navbar-height);
             padding: 0 10px;
@@ -223,17 +221,6 @@ export default defineComponent({
         > .main-centre-content {
             height: 0;
             flex: 1 1 0;
-            .main-centre-content-container {
-                > .search-container {
-                    display: flex;
-                    flex-direction: row;
-                    align-items: center;
-                    justify-content: center;
-                    width: 100%;
-                    padding: 10px 10px;
-                    box-sizing: border-box;
-                }
-            }
         }
     }
     > .right {

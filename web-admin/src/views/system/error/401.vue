@@ -1,21 +1,18 @@
-<script>
-/*
- * 401
- */
+<script lang="ts">
 import { defineComponent, reactive } from 'vue';
-import svg401 from '@/assets/img-list/401.svg';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
+
+import svg401 from '~/assets/img-list/401.svg';
 
 export default defineComponent({
     setup() {
         const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             svg401: svg401,
             path: '',
         });
-        /** 初始化 */
         function initData() {
-            let params = route.query || {};
+            const params = route.query || {};
             dataContainer.path = params.fullPath || params.path || '';
         }
         initData();
@@ -36,7 +33,7 @@ export default defineComponent({
                 <div class="content">
                     对不起，您正在寻找的页面没有访问权限。尝试检查URL的错误，然后按浏览器上的刷新按钮或尝试在我们的应用程序中找到其他内容。或者向管理员申请访问权限。
                 </div>
-                <router-link class="bt" to="/main/index"> 返回首页 </router-link>
+                <router-link class="bt" to="/"> 返回首页 </router-link>
             </div>
         </div>
     </div>

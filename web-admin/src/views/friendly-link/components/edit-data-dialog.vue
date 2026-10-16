@@ -1,15 +1,10 @@
-<script>
-/**
- * 数据编辑对话框
- * 使用外部调用的方式向内部传递数据
- * 使用promise的形式向外部通知状态
- */
+<script lang="ts">
 import { defineComponent, ref, reactive, nextTick } from 'vue';
-import { verifieData } from '@/common/verifie-tools.js';
-import { copyDefaults } from '@/common/copy-defaults.js';
-import friendlyLinkApi from '@/http/friendly-link.js';
-import { messageSuccess, messageError } from '@/action/message-prompt.js';
-/** 配置信息，初始化时使用 */
+import { z } from 'zod';
+
+import { copyDefaults } from '~/common/copy-defaults.ts';
+import friendlyLinkApi from '~/http/friendly-link.ts';
+import { messageSuccess, messageError } from '~/action/message-prompt.ts';
 const configMap = {
     open: {
         default: false,
@@ -21,21 +16,18 @@ const configMap = {
         default: '',
     },
     isShow: {
-        //是否只是展示
         default: false,
     },
 };
 
 export default defineComponent({
     name: 'EditDataDialog',
-    components: {},
     setup() {
-        const configData = reactive(copyDefaults({}, {}, configMap));
-        const FormElRef = ref(null); //组件实例
-        const dataContainer = reactive({
-            loading: false,
-            closeType: 'close', //关闭时的类型，是由确认取消按钮关闭的还是其他地方关闭的 confirm cancel
-            resolve: undefined, //返给外部promise的回调
+        const configData: any = reactive(copyDefaults({}, {}, configMap));
+        const FormElRef = ref<any>(null);
+        const dataContainer: any = reactive({
+            closeType: 'close',
+            resolve: undefined,
             reject: undefined,
             form: {},
             rules: {
@@ -43,12 +35,11 @@ export default defineComponent({
                 link: [{ required: true, message: '跳转链接', trigger: 'blur' }],
             },
         });
-        const otherDataContainer = {
-            castParams: {}, //向外部传递的参数
+        const otherDataContainer: any = {
+            castParams: {},
         };
         /**
          * 对话框关闭时的回调
-         * 根据行为类型来判断调用那个回调函数
          */
         function handleClose() {
             if (dataContainer.closeType == 'confirm') {
@@ -59,12 +50,10 @@ export default defineComponent({
         }
         /**
          * 初始化数据（外部调用）
-         * 返回一个promise，以提供直接的回调
          */
         function initData(show = true, data = {}, option = {}) {
             copyDefaults(configData, option, configMap);
             dataContainer.closeType = 'close';
-            dataContainer.loading = false;
             dataContainer.form = {};
             otherDataContainer.castParams = {};
             configData.open = show;
@@ -82,152 +71,55 @@ export default defineComponent({
             if (!dataContainer.form.id) return;
             friendlyLinkApi
                 .info(dataContainer.form)
-                .then((res) => {
+                .then((res: any) => {
                     const data = res.data || {};
                     dataContainer.form = data;
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 });
         }
         /** 验证信息 */
-        function validBase(data) {
-            const failData = verifieData(data, {
-                name(value, option) {
-                    let label = `${option.key}:名称`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (Object.prototype.toString.call(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 150) {
-                        data.label = label + ' 字符长度超出150';
-                        return data;
-                    }
-                    return true;
-                },
-                link(value, option) {
-                    let label = `${option.key}:链接`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (Object.prototype.toString.call(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                icon(value, option) {
-                    let label = `${option.key}:图片`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        return true;
-                    }
-                    if (Object.prototype.toString.call(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                content(value, option) {
-                    let label = `${option.key}:内容`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        return true;
-                    }
-                    if (Object.prototype.toString.call(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-            });
-            return failData;
+        const validBaseSchema = z.object({
+            name: z.string().min(1, '名称不能为空').max(150, '名称字符长度超出150'),
+            link: z.string().min(1, '链接不能为空').max(300, '链接字符长度超出300'),
+            icon: z.string().max(300, '图片字符长度超出300').optional(),
+            content: z.string().max(300, '内容字符长度超出300').optional(),
+        });
+        function validBase(data: any) {
+            const result = validBaseSchema.safeParse(data);
+            if (result.success) return;
+            return result.error.issues[0].message;
         }
         /** 提交数据 */
         function handleSubmit() {
-            /** 使用组件自带方法验证数据 */
             if (!FormElRef.value) return;
-            FormElRef.value.validate((valid, e) => {
+            FormElRef.value.validate((valid: any, e: any) => {
                 if (e) {
-                    /** 打印报错信息 */
-                    let msg = e[Object.keys(e)[0]][0].message;
+                    const msg = e[Object.keys(e)[0]][0].message;
                     messageError(msg);
                 }
                 if (!valid) return;
                 const verifiedData = validBase(dataContainer.form);
                 if (verifiedData) {
-                    messageError(verifiedData[0].label);
+                    messageError(verifiedData);
                     return;
                 }
                 const params = Object.assign({}, dataContainer.form);
-                let task;
-                if (params.id) {
-                    task = friendlyLinkApi.update(params);
-                } else {
-                    task = friendlyLinkApi.add(params);
-                }
+                const task = params.id
+                    ? friendlyLinkApi.update(params)
+                    : friendlyLinkApi.add(params);
                 task.then(() => {
                     messageSuccess('成功');
                     otherDataContainer.castParams = {};
                     dataContainer.closeType = 'confirm';
                     configData.open = false;
-                }).catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                }).catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 });
             });
-        }
-        /**
-         * 数据验证
-         * 外部可调用
-         */
-        function validData(data) {
-            const failData = verifieData(data, {
-                name(value, option) {
-                    let label = `${option.key}:名称`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-            });
-            return failData;
         }
         return {
             configData,
@@ -235,9 +127,7 @@ export default defineComponent({
             FormElRef,
             initData,
             handleClose,
-            getDataInfo,
             handleSubmit,
-            validData,
         };
     },
 });

@@ -1,23 +1,23 @@
-<script>
+<script lang="ts">
 import { defineComponent, reactive } from 'vue';
-import publicApi from '@/http/public.js';
-import userApi from '@/http/user.js';
-import { messageSuccess, messageError } from '@/action/message-prompt.js';
 import { useRoute, useRouter } from 'vue-router';
-import { throttleFn_1 as throttleFn } from '@/common/debounce-and-throttle.js';
-import { verifieData } from '@/common/verifie-tools.js';
 import { Select, ArrowRightBold, SemiSelect } from '@element-plus/icons-vue';
-import { userDataStore } from '@/store/user.js';
-import { getTypeOf } from '@/common/other-tools.js';
-import { toTrim, palindrome } from '@/common/string-tools.js';
-import { publicEncrypt } from '@/common/rsa-tools.js';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import img_2 from '@/assets/login-imgs/login-bg.svg';
-import img_3 from '@/assets/login-imgs/code.svg';
-import img_4 from '@/assets/login-imgs/login-bg-1.svg';
-import img_5 from '@/assets/login-imgs/login-bg-2.svg';
-import img_6 from '@/assets/login-imgs/login-bg-3.svg';
-import img_7 from '@/assets/login-imgs/login-bg-4.png';
+import { z } from 'zod';
+
+import publicApi from '~/http/public.ts';
+import userApi from '~/http/user.ts';
+import { messageSuccess, messageError } from '~/action/message-prompt.ts';
+import { throttleFn } from '~/common/debounce-and-throttle.ts';
+import { userDataStore } from '~/store/user.ts';
+import { toTrim, palindrome } from '~/common/string-tools.ts';
+import { publicEncrypt } from '~/common/rsa-tools.ts';
+import SvgIcon from '~/components/svg-icon.vue';
+import img_2 from '~/assets/login-imgs/login-bg.svg';
+import img_3 from '~/assets/login-imgs/code.svg';
+import img_4 from '~/assets/login-imgs/login-bg-1.svg';
+import img_5 from '~/assets/login-imgs/login-bg-2.svg';
+import img_6 from '~/assets/login-imgs/login-bg-3.svg';
+import img_7 from '~/assets/login-imgs/login-bg-4.png';
 
 export default defineComponent({
     name: 'LoginView',
@@ -31,19 +31,22 @@ export default defineComponent({
         const userData = userDataStore();
         const router = useRouter();
         const route = useRoute();
-        const dataContainer = reactive({
+        const dataContainer: any = reactive({
             name: import.meta.env.VITE_APP_name,
             version: import.meta.env.VITE_VERSION,
             form: {
                 name: '',
                 password: '',
-                phoneNumber: '',
-                captchaText: '',
+                captchaValue: '',
             },
-            loading: false,
-            captchaSvg: '',
-            captchaId: '',
-            loading_1: false,
+            getCaptchaStatus: {
+                loading: false,
+                key: '',
+                svg: '',
+            },
+            loginStatus: {
+                loading: false,
+            },
             img: {
                 img_2,
                 img_3,
@@ -54,165 +57,100 @@ export default defineComponent({
             },
         });
         /** 验证信息 */
-        function validBase(data) {
-            const failData = verifieData(data, {
-                name(value, option) {
-                    let label = `${option.key}:账号`;
-                    const data = {};
-                    var regex = /^[A-Za-z0-9-_]+$/;
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 70) {
-                        data.label = label + ' 字符长度长度超出70';
-                        return data;
-                    }
-                    let isPass = regex.test(value);
-                    if (!isPass) {
-                        data.label = label + ' 只能是英文，数字，下划线，中划线';
-                        return data;
-                    }
-                    return true;
-                },
-                password(value, option) {
-                    let label = `${option.key}:密码`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                phoneNumber(value, option) {
-                    let label = `${option.key}:电话号码`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                captchaText(value, option) {
-                    let label = `${option.key}:验证码`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 7) {
-                        data.label = label + ' 字符长度长度超出7';
-                        return data;
-                    }
-                    return true;
-                },
-            });
-            return failData;
+        const validSchema = z.object({
+            name: z
+                .string()
+                .min(1, '账号不能为空')
+                .max(70, '账号字符长度超出70')
+                .regex(/^[A-Za-z0-9-_]+$/, '账号只能是英文，数字，下划线，中划线'),
+            password: z.string().min(1, '密码不能为空').max(300, '密码字符长度超出300'),
+            captchaValue: z.string().min(1, '验证码不能为空').max(7, '验证码字符长度超出7'),
+        });
+        function validBase(data: any) {
+            const result = validSchema.safeParse(data);
+            if (result.success) return;
+            return result.error.issues[0].message;
         }
         /** 获取验证码 */
         const getCaptcha = throttleFn(function () {
-            if (dataContainer.loading_1) return;
-            dataContainer.loading_1 = true;
+            const getCaptchaStatus = {
+                loading: true,
+                key: '',
+                svg: '',
+            };
+            dataContainer.getCaptchaStatus = getCaptchaStatus;
             publicApi
                 .captcha()
-                .then((res) => {
+                .then((res: any) => {
                     const data = res.data || {};
-                    dataContainer.captchaId = data.id;
-                    dataContainer.captchaSvg = data.svg;
-                    dataContainer.form.captchaText = '';
+                    getCaptchaStatus.key = data.key;
+                    getCaptchaStatus.svg = data.svg;
+                    dataContainer.form.captchaValue = '';
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 })
                 .finally(() => {
-                    dataContainer.loading_1 = false;
+                    getCaptchaStatus.loading = false;
+                    dataContainer.getCaptchaStatus = { ...dataContainer.getCaptchaStatus };
                 });
         }, 700);
         getCaptcha();
         /** 登录操作 */
-        const onLogin = throttleFn(async function (otherParmas) {
-            if (dataContainer.loading) return;
+        const onLogin = throttleFn(async function (otherParams: any) {
             const verifiedData = validBase(dataContainer.form);
             if (verifiedData) {
-                messageError(verifiedData[0].label);
+                messageError(verifiedData);
                 return;
             }
-            dataContainer.loading = true;
+            const loginStatus = {
+                loading: true,
+            };
+            dataContainer.loginStatus = loginStatus;
             const publicKey = await publicApi
                 .rsaPublicKey()
-                .then((res) => {
+                .then((res: any) => {
                     return res.data || '';
                 })
                 .catch(() => {
                     return '';
                 });
-            const params = Object.assign({}, dataContainer.form, otherParmas);
-            params.captchaId = dataContainer.captchaId;
+            const params = Object.assign({}, dataContainer.form, otherParams);
+            params.captchaKey = dataContainer.getCaptchaStatus.key;
             try {
                 params.password = publicEncrypt(params.password, publicKey);
             } catch (error) {
                 messageError(error);
-                dataContainer.loading = false;
+                loginStatus.loading = false;
+                dataContainer.loginStatus = { ...dataContainer.loginStatus };
                 return;
             }
             userApi
                 .login(params)
-                .then(async (res) => {
-                    let data = res.data || '';
+                .then(async (res: any) => {
+                    const data = res.data || '';
                     dataContainer.form.password = '';
-                    /** 写入全局数据 */
-                    userData.setUserInfo({
-                        token: data || '',
-                    });
+                    userData.setToken(data || '');
                     messageSuccess('登录成功');
                     /**
                      * 登录成功，跳转到首页
                      * 其他用户信息会在路由跳转是获取到
                      */
-                    let routeParams = route.query || {};
+                    const routeParams = route.query || {};
                     if (routeParams.from) {
-                        router.push(decodeURIComponent(routeParams.from));
+                        router.push(decodeURIComponent(routeParams.from as string));
                     } else {
                         router.push('/');
                     }
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 })
                 .finally(() => {
-                    dataContainer.loading = false;
+                    loginStatus.loading = false;
+                    dataContainer.loginStatus = { ...dataContainer.loginStatus };
                     getCaptcha();
                 });
         }, 700);
@@ -276,19 +214,19 @@ export default defineComponent({
                         <div class="item">
                             <SvgIcon
                                 :style="'width:22px;height:22px;color:#fff;'"
-                                name="svg:g.svg"
+                                name="img:gitee.svg"
                             ></SvgIcon>
                         </div>
                         <div class="item">
                             <SvgIcon
                                 :style="'width:22px;height:22px;color:#00b9f3;'"
-                                name="svg:f.svg"
+                                name="img:facebook-messenger.svg"
                             ></SvgIcon>
                         </div>
                         <div class="item">
                             <SvgIcon
                                 :style="'width:22px;height:22px;color:#00c96e;'"
-                                name="svg:weixin.svg"
+                                name="img:wechat.svg"
                             ></SvgIcon>
                         </div>
                     </div>
@@ -296,7 +234,7 @@ export default defineComponent({
                     <div class="input-container">
                         <SvgIcon
                             :style="'width:20px;height:20px;margin-right:10px;'"
-                            name="svg:zhanghao.svg"
+                            name="svg:user-round.svg"
                         ></SvgIcon>
                         <el-input
                             clearable
@@ -314,7 +252,7 @@ export default defineComponent({
                     <div class="input-container">
                         <SvgIcon
                             :style="'width:20px;height:20px;margin-right:10px;'"
-                            name="svg:mima.svg"
+                            name="svg:lock-keyhole.svg"
                         ></SvgIcon>
                         <el-input
                             type="password"
@@ -332,34 +270,13 @@ export default defineComponent({
                             v-model="dataContainer.form.password"
                         />
                     </div>
-                    <div class="input-container">
-                        <SvgIcon
-                            :style="'width:20px;height:20px;margin-right:10px;'"
-                            name="svg:mima.svg"
-                        ></SvgIcon>
-                        <el-input
-                            type="password"
-                            clearable
-                            @keyup.enter="onLogin"
-                            show-password
-                            placeholder="电话号码"
-                            @input="
-                                () => {
-                                    dataContainer.form.phoneNumber = toTrim(
-                                        dataContainer.form.phoneNumber,
-                                    );
-                                }
-                            "
-                            v-model="dataContainer.form.phoneNumber"
-                        />
-                    </div>
                     <div class="input-container code">
                         <SvgIcon
                             :style="'width:20px;height:20px;margin-right:10px;'"
-                            name="svg:cat-code.svg"
+                            name="svg:key-round.svg"
                         ></SvgIcon>
                         <el-input
-                            v-model="dataContainer.form.captchaText"
+                            v-model="dataContainer.form.captchaValue"
                             placeholder="验证码"
                             clearable
                             @keyup.enter="onLogin"
@@ -368,14 +285,14 @@ export default defineComponent({
                         <div
                             @click="getCaptcha"
                             class="img"
-                            v-html="dataContainer.captchaSvg"
+                            v-html="dataContainer.getCaptchaStatus.svg"
                         ></div>
                     </div>
                     <div class="bt-list">
                         <el-button
                             class="login-bt"
                             v-if="!dataContainer.form.idU"
-                            :loading="dataContainer.loading"
+                            :loading="dataContainer.loginStatus.loading"
                             @click="onLogin"
                         >
                             登 录
@@ -393,7 +310,7 @@ export default defineComponent({
         <div class="bottom">
             版权所有 @admin.dumogu.top {{ dataContainer.name }} v-{{ dataContainer.version }}
             <a href="https://github.com/wurencaideli/dumogu-admin" target="_blank" class="bt">
-                <SvgIcon :style="'width:60px;height:25px;'" name="svg:github.svg"></SvgIcon>
+                <SvgIcon :style="'width:60px;height:25px;'" name="img:github.svg"></SvgIcon>
             </a>
         </div>
     </div>
@@ -576,7 +493,9 @@ export default defineComponent({
                     transition: all 0.2s;
                     box-shadow: inset 0 1px 4px #0000001f;
                     &:focus-within {
-                        box-shadow: inset 0 1px 4px #0000001f, 0 0 0 2px #007fff !important;
+                        box-shadow:
+                            inset 0 1px 4px #0000001f,
+                            0 0 0 2px #007fff !important;
                     }
                     :deep(.el-input) {
                         flex: 1 1 0;
@@ -636,7 +555,10 @@ export default defineComponent({
                         letter-spacing: 1px;
                         height: 45px;
                         background: linear-gradient(to right, #007fff, #0059b2);
-                        box-shadow: 0 3px 3px -2px #0003, 0 3px 4px #00000024, 0 1px 8px #0000001f;
+                        box-shadow:
+                            0 3px 3px -2px #0003,
+                            0 3px 4px #00000024,
+                            0 1px 8px #0000001f;
                     }
                 }
                 > .other {

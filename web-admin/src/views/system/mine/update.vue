@@ -1,25 +1,26 @@
-<script>
+<script lang="ts">
 import { defineComponent, ref, reactive } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { messageError, messageSuccess, confirm } from '@/action/message-prompt.js';
-import { toTrim } from '@/common/other-tools.js';
-import { throttleFn } from '@/common/debounce-and-throttle.js';
-import { userDataStore } from '@/store/user.js';
-import userApi from '@/http/user.js';
-import { themeList, typeList } from '@/action/option-list.js';
-import definScrollbar from '@/components/defin-scrollbar.vue';
-import mdEditor from '@/components/md-editor.vue';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import { messageError, messageSuccess, confirm } from '~/action/message-prompt.ts';
+import { toTrim } from '~/common/common-tools.ts';
+import { throttleFn } from '~/common/debounce-and-throttle.ts';
+import { userDataStore } from '~/store/user.ts';
+import userApi from '~/http/user.ts';
+import { themeList, typeList } from '~/action/option-list.ts';
+import DefineScrollbar from '~/components/define-scrollbar.vue';
+import MdEditor from '~/components/md-editor.vue';
 
 export default defineComponent({
     components: {
         SvgIcon,
-        definScrollbar,
-        mdEditor,
+        DefineScrollbar,
+        MdEditor,
     },
     setup() {
-        let userData = userDataStore();
-        const FormElRef = ref(null);
-        const dataContainer = reactive({
+        const userData = userDataStore();
+        const FormElRef = ref<any>(null);
+        const dataContainer: any = reactive({
             loading: false,
             form: {},
             rules: {
@@ -30,7 +31,7 @@ export default defineComponent({
         });
         /** 初始化数据 */
         function initData() {
-            Object.assign(dataContainer.form, userData.userInfo);
+            Object.assign(dataContainer.form, userData.info);
             getUserInfo();
         }
         initData();
@@ -40,15 +41,12 @@ export default defineComponent({
             dataContainer.loading = true;
             userApi
                 .info()
-                .then((res) => {
+                .then((res: any) => {
                     const data = res.data || {};
                     dataContainer.form = data;
                 })
-                .catch((res) => {
-                    let msg = '未知错误';
-                    if (typeof res == 'object') {
-                        msg = res.msg;
-                    }
+                .catch((res: any) => {
+                    const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                     messageError(msg);
                 })
                 .finally(() => {
@@ -58,7 +56,7 @@ export default defineComponent({
         /** 保存操作 */
         const handleSubmit = throttleFn(function () {
             if (!FormElRef.value || dataContainer.loading) return;
-            FormElRef.value.validate((valid, e) => {
+            FormElRef.value.validate((valid: any, e: any) => {
                 if (!valid) {
                     const message = e[Object.keys(e)[0]][0].message;
                     messageError(message);
@@ -69,20 +67,17 @@ export default defineComponent({
                         dataContainer.loading = true;
                         userApi
                             .update(dataContainer.form)
-                            .then((res) => {
+                            .then((res: any) => {
                                 messageSuccess('修改成功');
-                                let data = res.data || {};
-                                userData.setUserInfo(Object.assign({}, userData.userInfo, data));
+                                const data = res.data || {};
+                                userData.setUserInfo(Object.assign({}, userData.info, data));
                                 // 更新HTML文件
                                 userApi.updateAboutHtml().catch(() => {
                                     return;
                                 });
                             })
-                            .catch((res) => {
-                                let msg = '未知错误';
-                                if (typeof res == 'object') {
-                                    msg = res.msg;
-                                }
+                            .catch((res: any) => {
+                                const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                                 messageError(msg);
                             })
                             .finally(() => {
@@ -103,7 +98,7 @@ export default defineComponent({
 </script>
 
 <template>
-    <definScrollbar :loading="dataContainer.loading">
+    <DefineScrollbar>
         <div class="page-container mine-update-view">
             <div class="container">
                 <el-image class="img" :src="dataContainer.form.avatar" fit="cover" />
@@ -227,10 +222,10 @@ export default defineComponent({
                         </el-col>
                         <el-col :span="24" :xs="24">
                             <el-form-item label="关于" prop="about">
-                                <mdEditor
+                                <MdEditor
                                     :disabled="dataContainer.isShow"
                                     v-model:value="dataContainer.form.about"
-                                ></mdEditor>
+                                ></MdEditor>
                             </el-form-item>
                         </el-col>
                     </el-row>
@@ -240,7 +235,7 @@ export default defineComponent({
                 </el-button>
             </div>
         </div>
-    </definScrollbar>
+    </DefineScrollbar>
 </template>
 
 <style lang="scss" scoped>

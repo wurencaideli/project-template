@@ -1,24 +1,25 @@
-<script>
+<script lang="ts">
 import { defineComponent, ref, reactive } from 'vue';
-import SvgIcon from '@/components/svg-icon/index.vue';
-import { messageError, messageSuccess, confirm } from '@/action/message-prompt.js';
-import { toTrim, getTypeOf } from '@/common/other-tools.js';
-import { throttleFn } from '@/common/debounce-and-throttle.js';
-import userApi from '@/http/user.js';
-import publicApi from '@/http/public.js';
-import { userDataStore } from '@/store/user.js';
-import { verifieData } from '@/common/verifie-tools.js';
-import { publicEncrypt } from '@/common/rsa-tools.js';
+import { z } from 'zod';
+
+import SvgIcon from '~/components/svg-icon.vue';
+import { messageError, messageSuccess, confirm } from '~/action/message-prompt.ts';
+import { toTrim } from '~/common/common-tools.ts';
+import { throttleFn } from '~/common/debounce-and-throttle.ts';
+import userApi from '~/http/user.ts';
+import publicApi from '~/http/public.ts';
+import { userDataStore } from '~/store/user.ts';
+import { publicEncrypt } from '~/common/rsa-tools.ts';
 
 export default defineComponent({
     components: {
         SvgIcon,
     },
     setup() {
-        let userData = userDataStore();
-        const FormElRef = ref(null); //组件实例
-        const FormElRef_1 = ref(null); //组件实例
-        const dataContainer = reactive({
+        const userData = userDataStore();
+        const FormElRef = ref<any>(null);
+        const FormElRef_1 = ref<any>(null);
+        const dataContainer: any = reactive({
             loading: false,
             form: {},
             rules: {
@@ -28,7 +29,7 @@ export default defineComponent({
                 password_: [
                     { required: true, message: '请确认新密码', trigger: 'blur' },
                     {
-                        validator: (rule, value, callBack) => {
+                        validator: (rule: any, value: any, callBack: any) => {
                             if (value !== dataContainer.form.newPassword) {
                                 callBack(new Error('两次密码不一致'));
                             }
@@ -47,7 +48,7 @@ export default defineComponent({
                 password_: [
                     { required: true, message: '请确认新秘钥', trigger: 'blur' },
                     {
-                        validator: (rule, value, callBack) => {
+                        validator: (rule: any, value: any, callBack: any) => {
                             if (value !== dataContainer.form_1.newSignPassword) {
                                 callBack(new Error('两次秘钥不一致'));
                             }
@@ -61,7 +62,7 @@ export default defineComponent({
         /** 提交数据 */
         const handleSubmit = throttleFn(function () {
             if (!FormElRef.value || dataContainer.loading) return;
-            FormElRef.value.validate((valid, e) => {
+            FormElRef.value.validate((valid: any, e: any) => {
                 if (!valid) {
                     const message = e[Object.keys(e)[0]][0].message;
                     messageError(message);
@@ -69,7 +70,7 @@ export default defineComponent({
                 }
                 const verifiedData = validBase(dataContainer.form);
                 if (verifiedData) {
-                    messageError(verifiedData[0].label);
+                    messageError(verifiedData);
                     return;
                 }
                 confirm('确认提交数据', '提示！')
@@ -77,7 +78,7 @@ export default defineComponent({
                         dataContainer.loading = true;
                         const publicKey = await publicApi
                             .rsaPublicKey()
-                            .then((res) => {
+                            .then((res: any) => {
                                 return res.data || '';
                             })
                             .catch(() => {
@@ -96,11 +97,11 @@ export default defineComponent({
                         }
                         userApi
                             .updatePassword(params)
-                            .then((res) => {
+                            .then((res: any) => {
                                 messageSuccess('修改成功');
-                                let data = res.data || '';
+                                const data = res.data || '';
                                 userData.setUserInfo(
-                                    Object.assign({}, userData.userInfo, {
+                                    Object.assign({}, userData.info, {
                                         token: data,
                                     }),
                                 );
@@ -109,11 +110,8 @@ export default defineComponent({
                                 delete dataContainer.form.newPassword;
                                 delete dataContainer.form.password_;
                             })
-                            .catch((res) => {
-                                let msg = '未知错误';
-                                if (typeof res == 'object') {
-                                    msg = res.msg;
-                                }
+                            .catch((res: any) => {
+                                const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                                 messageError(msg);
                             })
                             .finally(() => {
@@ -127,66 +125,23 @@ export default defineComponent({
          * 数据验证
          * 外部可调用
          */
-        function validBase(data) {
-            const failData = verifieData(data, {
-                newPassword(value, option) {
-                    let label = `${option.key}:新密码`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                password(value, option) {
-                    let label = `${option.key}:密码`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                signPassword(value, option) {
-                    let label = `${option.key}:密匙`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-            });
-            return failData;
+        const validBaseSchema = z.object({
+            newPassword: z
+                .string()
+                .min(1, '新密码不能为空')
+                .max(300, '新密码字符长度超出300'),
+            password: z.string().min(1, '密码不能为空').max(300, '密码字符长度超出300'),
+            signPassword: z.string().min(1, '密匙不能为空').max(300, '密匙字符长度超出300'),
+        });
+        function validBase(data: any) {
+            const result = validBaseSchema.safeParse(data);
+            if (result.success) return;
+            return result.error.issues[0].message;
         }
         /** 提交数据 */
         const handleSubmit_1 = throttleFn(function () {
             if (!FormElRef_1.value || dataContainer.loading_1) return;
-            FormElRef_1.value.validate((valid, e) => {
+            FormElRef_1.value.validate((valid: any, e: any) => {
                 if (!valid) {
                     const message = e[Object.keys(e)[0]][0].message;
                     messageError(message);
@@ -194,7 +149,7 @@ export default defineComponent({
                 }
                 const verifiedData = validBase_1(dataContainer.form_1);
                 if (verifiedData) {
-                    messageError(verifiedData[0].label);
+                    messageError(verifiedData);
                     return;
                 }
                 confirm('确认提交数据', '提示！')
@@ -202,7 +157,7 @@ export default defineComponent({
                         dataContainer.loading_1 = true;
                         const publicKey = await publicApi
                             .rsaPublicKey()
-                            .then((res) => {
+                            .then((res: any) => {
                                 return res.data || '';
                             })
                             .catch(() => {
@@ -224,11 +179,11 @@ export default defineComponent({
                         }
                         userApi
                             .updateSignPassword(params)
-                            .then((res) => {
+                            .then((res: any) => {
                                 messageSuccess('修改成功');
-                                let data = res.data || '';
+                                const data = res.data || '';
                                 userData.setUserInfo(
-                                    Object.assign({}, userData.userInfo, {
+                                    Object.assign({}, userData.info, {
                                         token: data,
                                     }),
                                 );
@@ -237,11 +192,8 @@ export default defineComponent({
                                 delete dataContainer.form.newSignPassword;
                                 delete dataContainer.form.password_;
                             })
-                            .catch((res) => {
-                                let msg = '未知错误';
-                                if (typeof res == 'object') {
-                                    msg = res.msg;
-                                }
+                            .catch((res: any) => {
+                                const msg = res?.msg || (typeof res == 'object' ? '' : res) || '未知错误';
                                 messageError(msg);
                             })
                             .finally(() => {
@@ -255,61 +207,18 @@ export default defineComponent({
          * 数据验证
          * 外部可调用
          */
-        function validBase_1(data) {
-            const failData = verifieData(data, {
-                newSignPassword(value, option) {
-                    let label = `${option.key}:新密匙`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                password(value, option) {
-                    let label = `${option.key}:密码`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-                signPassword(value, option) {
-                    let label = `${option.key}:密匙`;
-                    const data = {};
-                    if (!value && value !== 0) {
-                        data.label = label + ' 不能为空';
-                        return data;
-                    }
-                    if (getTypeOf(value) !== '[object String]') {
-                        data.label = label + ' 必须是一个字符串';
-                        return data;
-                    }
-                    if (value.length > 300) {
-                        data.label = label + ' 字符长度长度超出300';
-                        return data;
-                    }
-                    return true;
-                },
-            });
-            return failData;
+        const validBaseSchema_1 = z.object({
+            newSignPassword: z
+                .string()
+                .min(1, '新密匙不能为空')
+                .max(300, '新密匙字符长度超出300'),
+            password: z.string().min(1, '密码不能为空').max(300, '密码字符长度超出300'),
+            signPassword: z.string().min(1, '密匙不能为空').max(300, '密匙字符长度超出300'),
+        });
+        function validBase_1(data: any) {
+            const result = validBaseSchema_1.safeParse(data);
+            if (result.success) return;
+            return result.error.issues[0].message;
         }
         return {
             dataContainer,

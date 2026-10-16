@@ -1,6 +1,33 @@
-/**
- * 公用的css
- */
+:root {
+    --bg-color: #1e1f22;
+    --bg-color-2: #2b2d31;
+    --bg-color-3: #3c3f45;
+    --text-color: #ededed;
+    --text-color-1: #c7c7c7;
+    --border-color: #1f364d;
+    --theme-color: rgb(25, 118, 210);
+    --navbar-height: 48px;
+    --tags-height: 40px;
+    --menu-width: max(min(270px, 20vw), 230px);
+    --page-gap: 10px;
+    --bt-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0px 2px rgba(0, 0, 0, 0.9);
+    --bt-box-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0px 2px rgba(0, 0, 0, 0.9);
+    --box-shadow-2:
+        0 1px 0 hsl(0 calc(1 * 0%) 0.8% / 0.2), 0 1.5px 0 hsl(240 calc(1 * 7.7%) 2.5% / 0.05),
+        0 2px 0 hsl(0 calc(1 * 0%) 0.8% / 0.05);
+    --el-color-primary-rgb: 83, 64, 255 !important;
+    --el-color-primary: #5240ff !important;
+    --el-color-primary-light-1: rgba(83, 64, 255, 0.9) !important;
+    --el-color-primary-light-2: rgba(83, 64, 255, 0.8) !important;
+    --el-color-primary-light-3: rgba(83, 64, 255, 0.7) !important;
+    --el-color-primary-light-4: rgba(83, 64, 255, 0.6) !important;
+    --el-color-primary-light-5: rgba(83, 64, 255, 0.5) !important;
+    --el-color-primary-light-6: rgba(83, 64, 255, 0.4) !important;
+    --el-color-primary-light-7: rgba(83, 64, 255, 0.3) !important;
+    --el-color-primary-light-8: rgba(83, 64, 255, 0.2) !important;
+    --el-color-primary-light-9: rgba(83, 64, 255, 0.1) !important;
+    --el-color-primary-dark-2: #4839ce !important;
+}
 html {
     font-size: 16px;
 }
@@ -8,23 +35,21 @@ body {
     width: 100% !important;
     margin: 0;
     overflow: auto !important;
-    word-break: break-all; /* 强行换行 */
+    word-break: break-all;
     background-color: var(--bg-color);
-    color: var(--text-color); /* 去除默认的颜色和点击后变化的颜色 */
-    /** 解决ios上手机横屏导致的字体大小不一致 */
+    color: var(--text-color);
     -webkit-text-size-adjust: 100%;
 }
 a {
     text-align: left;
     text-decoration: none;
-    outline: none; /* 去除旧版浏览器的点击后的外虚线框 */
-    color: var(--text-color); /* 去除默认的颜色和点击后变化的颜色 */
+    outline: none;
+    color: var(--text-color);
 }
 img {
-    vertical-align: bottom; //阻止图片出现下边距
+    vertical-align: bottom;
 }
 * {
-    //去除移动端点击事件出现的背景框
     -webkit-tap-highlight-color: transparent;
 }
 [v-cloak] {
@@ -36,4 +61,90 @@ input[type='file']::-webkit-file-upload-button {
     margin: 0;
     -webkit-appearance: none;
     border: none;
+}
+.dropdown-menu-modal {
+    width: max-content;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background-color: #1f1f23;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 8px;
+    box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.5),
+        0 0 6px rgba(0, 0, 0, 0.4);
+}
+/** 进度条颜色 */
+#nprogress {
+    position: relative;
+    z-index: 99999;
+    .bar {
+        height: 5px !important;
+        background: #1a56db !important;
+    }
+    .peg {
+        box-shadow:
+            0 0 10px #1a56db,
+            0 0 5px #1a56db !important;
+    }
+    .spinner-icon {
+        border-top-color: #1a56db !important;
+        border-left-color: #1a56db !important;
+    }
+}
+#app {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+.hidden {
+    display: none;
+}
+/** 不显示滚动条 */
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+    /** 解决后代想要滚动条的问题 */
+    *:not(.need-scrollbar, .need-scrollbar > *) {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+}
+/**
+ * 页面容器的css 类名
+ * 以查询，内容上下排列
+ */
+.page-container {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: var(--page-gap);
+    box-sizing: border-box;
+    > .container {
+        background-color: rgba(0, 0, 0, 0.275);
+    }
+    /** 查询体 */
+    > .page-query-box {
+        height: fit-content;
+        border-radius: 5px;
+        background-color: rgba(0, 0, 0, 0.371);
+        box-sizing: border-box;
+        .el-form--inline .el-form-item {
+            width: 100%;
+        }
+    }
+    /** 内容体 */
+    > .page-content-box {
+        flex: 1 0 0;
+        height: 0;
+        border-radius: 5px;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.371);
+    }
 }
